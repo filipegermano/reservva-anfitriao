@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getOwnedProperty } from "@/lib/property-access";
+import { keyFromUploadUrl, s3, uploadsBucket } from "@/lib/storage";
 import { updatePropertySchema } from "@/lib/validations/property";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -68,6 +70,13 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   }
 
   await prisma.property.delete({ where: { id } });
+
+  const coverKey = keyFromUploadUrl(existing.coverImageUrl);
+  if (coverKey) {
+    await s3
+      .send(new DeleteObjectCommand({ Bucket: uploadsBucket, Key: coverKey }))
+      .catch(() => null);
+  }
 
   return NextResponse.json({ ok: true });
 }

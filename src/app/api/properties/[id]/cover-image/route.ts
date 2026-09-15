@@ -6,16 +6,17 @@ import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getOwnedProperty } from "@/lib/property-access";
-import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_BYTES, s3, uploadsBucket } from "@/lib/storage";
+import {
+  ALLOWED_IMAGE_TYPES,
+  keyFromUploadUrl,
+  MAX_UPLOAD_BYTES,
+  s3,
+  uploadsBucket,
+} from "@/lib/storage";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 const UPLOAD_PREFIX = "/api/uploads/";
-
-function keyFromUploadUrl(url: string | null): string | null {
-  if (!url || !url.startsWith(UPLOAD_PREFIX)) return null;
-  return url.slice(UPLOAD_PREFIX.length);
-}
 
 export async function POST(request: Request, { params }: RouteParams) {
   const session = await auth();

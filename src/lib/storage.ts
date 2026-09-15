@@ -24,3 +24,11 @@ export const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
 };
+
+const UPLOAD_PREFIX = "/api/uploads/";
+
+/** Extrai a key do bucket a partir de uma coverImageUrl gerada por este app. */
+export function keyFromUploadUrl(url: string | null): string | null {
+  if (!url || !url.startsWith(UPLOAD_PREFIX)) return null;
+  return url.slice(UPLOAD_PREFIX.length);
+}
