@@ -40,3 +40,18 @@ Abra [http://localhost:3000](http://localhost:3000).
 - `npm run build` — build de produção
 - `npm run lint` — eslint
 - `npx prisma studio` — explorar o banco local
+
+## Deploy (Railway)
+
+Em produção no [Railway](https://railway.com), o SQLite precisa de um volume
+persistente — sem ele, o banco é perdido a cada deploy. Configuração usada:
+
+- **Volume** montado em `/data`.
+- **Variáveis**: `DATABASE_URL=file:/data/prod.db`, `AUTH_SECRET` (forte,
+  gerado com `openssl rand -base64 33`), `AUTH_TRUST_HOST=true`, `AUTH_URL`
+  apontando para o domínio público do serviço.
+- **Start command** customizado: `npx prisma migrate deploy && next start`.
+  A migração roda no comando de start (não em `deploy.preDeployCommand`)
+  porque, na Railway, o pre-deploy roda em uma instância efêmera sem o
+  volume persistente montado — rodar a migração ali não persiste no banco
+  real, causando `table does not exist` na primeira query em produção.
