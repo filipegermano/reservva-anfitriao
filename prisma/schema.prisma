@@ -1,0 +1,69 @@
+// Schema do Reservva Anfitrião
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  properties   Property[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Property {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name     String
+  slug     String @unique
+
+  address       String?
+  coverImageUrl String?
+  welcomeMessage String?
+
+  wifiName     String?
+  wifiPassword String?
+
+  checkInTime          String?
+  checkInInstructions  String?
+  checkOutTime         String?
+  checkOutInstructions String?
+
+  houseRules String?
+
+  recommendations Recommendation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RecommendationCategory {
+  RESTAURANTE
+  ATRACAO
+  TRANSPORTE
+  MERCADO
+  FARMACIA
+  OUTRO
+}
+
+model Recommendation {
+  id          String                  @id @default(cuid())
+  propertyId  String
+  property    Property                @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category    RecommendationCategory  @default(OUTRO)
+  name        String
+  description String?
+  mapsUrl     String?
+  order       Int                     @default(0)
+  createdAt   DateTime                @default(now())
+}
