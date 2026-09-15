@@ -12,6 +12,8 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { GuidePhoneMockup } from "@/components/marketing/guide-phone-mockup";
+import { ChatMockup } from "@/components/marketing/chat-mockup";
 
 const painPoints = [
   {
@@ -109,50 +111,69 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="mx-auto max-w-4xl px-4 py-20 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            <Sparkles className="size-3.5" />
-            Feito para anfitriões de Airbnb, pousadas e temporadas
-          </span>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            O primeiro contato do hóspede com o seu espaço merece ser{" "}
-            <em className="font-heading text-primary italic">profissional</em>
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-balance">
-            Crie cartazes de boas-vindas e guias digitais com wi-fi, check-in/out,
-            regras da casa e dicas da região — sem precisar saber nada de design.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <Link href="/registrar">
-                Criar meu guia grátis
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/entrar">Já tenho conta</Link>
-            </Button>
+        <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
+            <div className="text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <Sparkles className="size-3.5" />
+                Feito para anfitriões de Airbnb, pousadas e temporadas
+              </span>
+              <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+                O primeiro contato do hóspede com o seu espaço merece ser{" "}
+                <em className="font-heading text-primary italic">profissional</em>
+              </h1>
+              <p className="mt-4 max-w-xl text-lg text-muted-foreground text-balance lg:mx-0 mx-auto">
+                Crie cartazes de boas-vindas e guias digitais com wi-fi, check-in/out,
+                regras da casa e dicas da região — sem precisar saber nada de design.
+              </p>
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+                <Button asChild size="lg">
+                  <Link href="/registrar">
+                    Criar meu guia grátis
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/entrar">Já tenho conta</Link>
+                </Button>
+              </div>
+              <p className="mt-6 text-xs text-muted-foreground">
+                Funciona com anúncios do Airbnb, Booking, VRBO e qualquer plataforma de temporada.
+              </p>
+            </div>
+
+            <GuidePhoneMockup />
           </div>
         </section>
 
         {/* Problema */}
         <section className="border-y bg-muted/20">
           <div className="mx-auto max-w-6xl px-4 py-16">
-            <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-              Você conhece esse cenário?
-            </h2>
-            <div className="mt-10 grid gap-6 sm:grid-cols-3">
-              {painPoints.map((point) => (
-                <Card key={point.title} className="border-none bg-background shadow-sm">
-                  <CardContent className="flex flex-col items-start gap-3 pt-6">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <point.icon className="size-5" />
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                  Você conhece esse cenário?
+                </h2>
+                <p className="mt-3 text-muted-foreground">
+                  As mesmas perguntas chegam pra cada hóspede novo, e a resposta some no
+                  meio da conversa do WhatsApp.
+                </p>
+                <div className="mt-8 space-y-5">
+                  {painPoints.map((point) => (
+                    <div key={point.title} className="flex gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <point.icon className="size-4.5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{point.title}</p>
+                        <p className="text-sm text-muted-foreground">{point.description}</p>
+                      </div>
                     </div>
-                    <p className="font-medium">{point.title}</p>
-                    <p className="text-sm text-muted-foreground">{point.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+                  ))}
+                </div>
+              </div>
+
+              <ChatMockup />
             </div>
           </div>
         </section>
