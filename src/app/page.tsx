@@ -42,6 +42,7 @@ const products = [
       "Um cartaz pronto para imprimir e emoldurar, com QR code para o guia completo. Deixe na entrada ou na mesa da sala.",
     href: "/registrar",
     cta: "Criar meu cartaz",
+    tone: "primary" as const,
   },
   {
     icon: QrCode,
@@ -50,6 +51,7 @@ const products = [
       "Uma página só sua, acessível por link ou QR code, sempre atualizada: wi-fi, check-in/out, regras e dicas da região.",
     href: "/registrar",
     cta: "Criar meu guia",
+    tone: "accent" as const,
   },
 ];
 
@@ -108,12 +110,13 @@ export default function LandingPage() {
       <main className="flex-1">
         {/* Hero */}
         <section className="mx-auto max-w-4xl px-4 py-20 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <Sparkles className="size-3.5" />
             Feito para anfitriões de Airbnb, pousadas e temporadas
           </span>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            O primeiro contato do hóspede com o seu espaço merece ser profissional
+            O primeiro contato do hóspede com o seu espaço merece ser{" "}
+            <em className="font-heading text-primary italic">profissional</em>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-balance">
             Crie cartazes de boas-vindas e guias digitais com wi-fi, check-in/out,
@@ -169,7 +172,13 @@ export default function LandingPage() {
             {products.map((product) => (
               <Card key={product.title}>
                 <CardContent className="flex flex-col gap-4 pt-6">
-                  <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div
+                    className={
+                      product.tone === "accent"
+                        ? "flex size-12 items-center justify-center rounded-lg bg-accent text-accent-foreground"
+                        : "flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                    }
+                  >
                     <product.icon className="size-6" />
                   </div>
                   <div>
