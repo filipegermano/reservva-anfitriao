@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { updatePropertySchema, type UpdatePropertyInput } from "@/lib/validations/property";
+import { CoverImageUploader } from "@/components/property/cover-image-uploader";
 
 export function PropertyGuideForm({ property }: { property: Property }) {
   const router = useRouter();
@@ -33,7 +34,6 @@ export function PropertyGuideForm({ property }: { property: Property }) {
     defaultValues: {
       name: property.name,
       address: property.address ?? "",
-      coverImageUrl: property.coverImageUrl ?? "",
       welcomeMessage: property.welcomeMessage ?? "",
       wifiName: property.wifiName ?? "",
       wifiPassword: property.wifiPassword ?? "",
@@ -84,9 +84,8 @@ export function PropertyGuideForm({ property }: { property: Property }) {
             <Label htmlFor="address">Endereço</Label>
             <Input id="address" {...register("address")} />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="coverImageUrl">URL da foto de capa (opcional)</Label>
-            <Input id="coverImageUrl" placeholder="https://…" {...register("coverImageUrl")} />
+          <div className="sm:col-span-2">
+            <CoverImageUploader propertyId={property.id} initialUrl={property.coverImageUrl} />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="welcomeMessage">Mensagem de boas-vindas</Label>

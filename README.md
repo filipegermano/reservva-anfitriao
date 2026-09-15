@@ -22,6 +22,8 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
   `reservva-backend`)
 - [Auth.js](https://authjs.dev) (Credentials) para login/registro
 - `qrcode` para gerar os QR codes e `@react-pdf/renderer` para o cartaz em PDF
+- Armazenamento de objetos S3-compatible (`@aws-sdk/client-s3`) para a foto
+  de capa do imóvel
 
 ## Rodando localmente
 
@@ -55,3 +57,8 @@ persistente — sem ele, o banco é perdido a cada deploy. Configuração usada:
   porque, na Railway, o pre-deploy roda em uma instância efêmera sem o
   volume persistente montado — rodar a migração ali não persiste no banco
   real, causando `table does not exist` na primeira query em produção.
+- **Bucket** (Railway Object Storage, S3-compatible) para a foto de capa —
+  `AWS_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+  `AWS_S3_BUCKET_NAME`, `AWS_DEFAULT_REGION`. As imagens são servidas pela
+  própria aplicação em `/api/uploads/[...key]` (o bucket não precisa ser
+  público).
