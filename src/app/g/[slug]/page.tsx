@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DoorOpen, LogOut, MapPin, ScrollText, Wifi } from "lucide-react";
+import { DoorOpen, LogOut, MapPin, MessageCircleHeart, ScrollText, Wifi } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
-import { recommendationCategoryLabels } from "@/lib/recommendation-categories";
+import { recommendationCategoryIcons, recommendationCategoryLabels } from "@/lib/recommendation-categories";
 import { CopyField } from "@/components/copy-field";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -30,6 +28,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+function SectionCard({
+  icon: Icon,
+  title,
+  tone,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  tone: "primary" | "accent";
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border bg-card p-4 text-card-foreground shadow-sm">
+      <div className="flex items-center gap-2.5">
+        <div
+          className={
+            tone === "accent"
+              ? "flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground"
+              : "flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+          }
+        >
+          <Icon className="size-4" />
+        </div>
+        <p className="font-heading font-medium">{title}</p>
+      </div>
+      <div className="mt-3 space-y-2 text-sm">{children}</div>
+    </div>
+  );
+}
+
 export default async function GuestGuidePage({ params }: PageProps) {
   const { slug } = await params;
   const property = await getProperty(slug);
@@ -47,56 +75,53 @@ export default async function GuestGuidePage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-muted/20 pb-16">
       <div
-        className="flex h-48 flex-col items-center justify-end bg-gradient-to-br from-primary/80 to-primary bg-cover bg-center px-4 pb-6 text-center text-primary-foreground"
+        className="relative h-56 bg-gradient-to-br from-primary/80 to-primary bg-cover bg-center sm:h-64"
         style={
           property.coverImageUrl
             ? { backgroundImage: `url(${property.coverImageUrl})` }
             : undefined
         }
       >
-        <div className="rounded-lg bg-background/90 px-4 py-2 text-foreground shadow-sm">
-          <h1 className="text-xl font-semibold">{property.name}</h1>
-          {property.address && (
-            <p className="text-sm text-muted-foreground">{property.address}</p>
-          )}
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
       </div>
 
-      <div className="mx-auto -mt-2 max-w-xl space-y-4 px-4">
-        {property.welcomeMessage && (
-          <Card>
-            <CardContent className="py-4 text-sm leading-relaxed">
-              {property.welcomeMessage}
-            </CardContent>
-          </Card>
-        )}
+      <div className="relative z-10 mx-auto -mt-8 max-w-xl px-4">
+        <div className="rounded-2xl border bg-card p-5 text-card-foreground shadow-lg">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Guia do hóspede
+          </p>
+          <h1 className="mt-1 font-heading text-2xl font-semibold">{property.name}</h1>
+          {property.address && (
+            <p className="mt-1.5 flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin className="size-3.5" />
+              {property.address}
+            </p>
+          )}
+        </div>
 
-        {(property.wifiName || property.wifiPassword) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Wifi className="size-4 text-primary" />
-                Wi-Fi
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
+        <div className="mt-4 space-y-4">
+          {property.welcomeMessage && (
+            <div className="rounded-2xl bg-primary/10 p-4">
+              <div className="flex gap-2.5">
+                <MessageCircleHeart className="size-5 shrink-0 text-primary" />
+                <p className="text-sm leading-relaxed text-foreground">
+                  {property.welcomeMessage}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {(property.wifiName || property.wifiPassword) && (
+            <SectionCard icon={Wifi} title="Wi-Fi" tone="primary">
               {property.wifiName && <CopyField label="Rede" value={property.wifiName} />}
               {property.wifiPassword && (
                 <CopyField label="Senha" value={property.wifiPassword} />
               )}
-            </CardContent>
-          </Card>
-        )}
+            </SectionCard>
+          )}
 
-        {(property.checkInTime || property.checkInInstructions) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <DoorOpen className="size-4 text-primary" />
-                Check-in
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+          {(property.checkInTime || property.checkInInstructions) && (
+            <SectionCard icon={DoorOpen} title="Check-in" tone="accent">
               {property.checkInTime && (
                 <p>
                   <span className="font-medium">Horário:</span> {property.checkInTime}
@@ -107,19 +132,11 @@ export default async function GuestGuidePage({ params }: PageProps) {
                   {property.checkInInstructions}
                 </p>
               )}
-            </CardContent>
-          </Card>
-        )}
+            </SectionCard>
+          )}
 
-        {(property.checkOutTime || property.checkOutInstructions) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <LogOut className="size-4 text-primary" />
-                Check-out
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+          {(property.checkOutTime || property.checkOutInstructions) && (
+            <SectionCard icon={LogOut} title="Check-out" tone="primary">
               {property.checkOutTime && (
                 <p>
                   <span className="font-medium">Horário:</span> {property.checkOutTime}
@@ -130,74 +147,69 @@ export default async function GuestGuidePage({ params }: PageProps) {
                   {property.checkOutInstructions}
                 </p>
               )}
-            </CardContent>
-          </Card>
-        )}
+            </SectionCard>
+          )}
 
-        {property.houseRules && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ScrollText className="size-4 text-primary" />
-                Regras da casa
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {property.houseRules}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+          {property.houseRules && (
+            <SectionCard icon={ScrollText} title="Regras da casa" tone="accent">
+              <p className="whitespace-pre-line text-muted-foreground">{property.houseRules}</p>
+            </SectionCard>
+          )}
 
-        {property.recommendations.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MapPin className="size-4 text-primary" />
-                Dicas da região
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {Object.entries(recommendationsByCategory).map(([category, items]) => (
-                <div key={category} className="space-y-2">
-                  <Badge variant="secondary">
-                    {recommendationCategoryLabels[
-                      category as keyof typeof recommendationCategoryLabels
-                    ] ?? category}
-                  </Badge>
-                  <ul className="space-y-3">
-                    {items.map((item) => (
-                      <li key={item.id} className="text-sm">
-                        <p className="font-medium">{item.name}</p>
-                        {item.description && (
-                          <p className="text-muted-foreground">{item.description}</p>
-                        )}
-                        {item.mapsUrl && (
-                          <a
-                            href={item.mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline underline-offset-4"
+          {property.recommendations.length > 0 && (
+            <SectionCard icon={MapPin} title="Dicas da região" tone="primary">
+              <div className="space-y-5">
+                {Object.entries(recommendationsByCategory).map(([category, items]) => {
+                  const CategoryIcon =
+                    recommendationCategoryIcons[
+                      category as keyof typeof recommendationCategoryIcons
+                    ] ?? MapPin;
+
+                  return (
+                    <div key={category}>
+                      <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                        <CategoryIcon className="size-3.5" />
+                        {recommendationCategoryLabels[
+                          category as keyof typeof recommendationCategoryLabels
+                        ] ?? category}
+                      </p>
+                      <ul className="mt-2 space-y-3">
+                        {items.map((item) => (
+                          <li
+                            key={item.id}
+                            className="rounded-lg bg-accent/30 p-2.5"
                           >
-                            Ver no mapa
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+                            <p className="font-medium">{item.name}</p>
+                            {item.description && (
+                              <p className="text-muted-foreground">{item.description}</p>
+                            )}
+                            {item.mapsUrl && (
+                              <a
+                                href={item.mapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 inline-block text-primary underline underline-offset-4"
+                              >
+                                Ver no mapa
+                              </a>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          )}
 
-        <p className="pt-4 text-center text-xs text-muted-foreground">
-          Guia criado com{" "}
-          <Link href="/" className="underline underline-offset-4">
-            Reservva Anfitrião
-          </Link>
-        </p>
+          <p className="pt-4 text-center text-xs text-muted-foreground">
+            Guia criado com{" "}
+            <Link href="/" className="underline underline-offset-4">
+              Reservva Anfitrião
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
