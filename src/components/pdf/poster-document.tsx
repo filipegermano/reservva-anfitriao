@@ -24,6 +24,9 @@ type PosterDocumentProps = {
 function createStyles(template: PosterTemplate, size: PosterSize, titleLength: number) {
   const k = posterSizes[size].width / posterSizes.A4.width;
   const s = (value: number) => value * k;
+  // Em formatos pequenos (A6) o texto não encolhe na mesma proporção, para
+  // continuar legível impresso.
+  const f = (value: number) => value * Math.max(k, 0.72);
   const titleSize = titleLength > 48 ? 26 : titleLength > 28 ? 32 : 40;
 
   return StyleSheet.create({
@@ -44,20 +47,21 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
       color: template.banner ? template.accentForeground : template.foreground,
     },
     eyebrow: {
-      fontSize: s(12),
+      fontSize: f(12),
       letterSpacing: s(4),
       textTransform: "uppercase",
       opacity: 0.85,
     },
     title: {
       fontFamily: template.headingFont,
+      // O título já é grande: acompanha a escala do papel.
       fontSize: s(titleSize),
       textAlign: "center",
       marginTop: s(8),
       lineHeight: 1.15,
     },
     city: {
-      fontSize: s(11),
+      fontSize: f(11),
       marginTop: s(6),
       opacity: 0.8,
     },
@@ -68,7 +72,7 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
       backgroundColor: template.banner ? template.accentForeground : template.accent,
     },
     message: {
-      fontSize: s(13),
+      fontSize: f(13),
       textAlign: "center",
       color: template.muted,
       marginTop: s(18),
@@ -92,19 +96,19 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
       borderColor: template.background === "#ffffff" ? "#e5e5e5" : template.surface,
     },
     label: {
-      fontSize: s(8.5),
+      fontSize: f(8.5),
       letterSpacing: s(1.5),
       textTransform: "uppercase",
       color: template.accent,
       fontFamily: template.headingFont,
     },
     value: {
-      fontSize: s(13),
+      fontSize: f(13),
       fontFamily: template.headingFont,
       marginTop: s(4),
     },
     detail: {
-      fontSize: s(9.5),
+      fontSize: f(9.5),
       color: template.muted,
       marginTop: s(2),
     },
@@ -121,12 +125,12 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
     },
     bullet: {
       width: s(12),
-      fontSize: s(10.5),
+      fontSize: f(10.5),
       color: template.accent,
     },
     ruleText: {
       flex: 1,
-      fontSize: s(10.5),
+      fontSize: f(10.5),
       lineHeight: 1.35,
     },
     qrSection: {
@@ -154,21 +158,21 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
     },
     qrTitle: {
       fontFamily: template.headingFont,
-      fontSize: s(16),
+      fontSize: f(16),
       lineHeight: 1.25,
     },
     qrDetail: {
-      fontSize: s(10),
+      fontSize: f(10),
       marginTop: s(6),
       opacity: 0.85,
     },
     qrUrl: {
-      fontSize: s(8.5),
+      fontSize: f(8.5),
       marginTop: s(8),
       opacity: 0.75,
     },
     footer: {
-      fontSize: s(8),
+      fontSize: f(8),
       textAlign: "center",
       color: template.muted,
       marginTop: s(10),
@@ -188,8 +192,10 @@ export function PosterDocument({
 }: PosterDocumentProps) {
   const t = posterLanguages[lang];
   const styles = createStyles(template, size, content.name.length);
+  // A6 tem pouco espaço: menos regras e sem a mensagem de boas-vindas.
+  const compact = size === "A6";
   const wifi = showWifi ? content.wifi : null;
-  const rules = showRules ? content.rules : [];
+  const rules = showRules ? content.rules.slice(0, compact ? 3 : undefined) : [];
 
   return (
     <Document title={`Cartaz — ${content.name}`}>
@@ -201,7 +207,7 @@ export function PosterDocument({
           <View style={styles.divider} />
         </View>
 
-        {content.welcomeMessage && lang === "pt" ? (
+        {content.welcomeMessage && lang === "pt" && !compact ? (
           <Text style={styles.message}>{content.welcomeMessage}</Text>
         ) : null}
 

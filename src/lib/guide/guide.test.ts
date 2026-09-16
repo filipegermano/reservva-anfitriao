@@ -7,7 +7,7 @@ import { buildSectionsFromDraft } from "@/lib/guide/draft-sections";
 import { searchSections, sectionHasContent } from "@/lib/guide/presence";
 import { parseSectionContent, sectionMeta, sectionTypes } from "@/lib/guide/sections";
 import { emptyDraft } from "@/lib/import/listing-draft";
-import { posterContent } from "@/lib/poster";
+import { posterContent, posterOptionsSchema, posterTemplates } from "@/lib/poster";
 import { defaultThemeId, getTheme, homeTileColors } from "@/lib/guide/themes";
 import { collectUploadUrls } from "@/lib/storage";
 
@@ -228,5 +228,20 @@ describe("homeTileColors", () => {
   it("mantém a cor por tipo de seção nos temas coloridos", () => {
     const moderno = getTheme("moderno");
     expect(homeTileColors(moderno, { tone: 2, index: 0, featured: true })).toBe(moderno.tiles[2]);
+  });
+});
+
+describe("tema verde sálvia e cartaz A6", () => {
+  it("existe no guia digital e no cartaz", () => {
+    expect(getTheme("salvia").name).toBe("Verde sálvia");
+    expect(posterTemplates.some((template) => template.id === "salvia")).toBe(true);
+  });
+
+  it("aceita o tamanho A6 nas opções do cartaz", () => {
+    expect(posterOptionsSchema.parse({ template: "salvia", size: "A6" })).toMatchObject({
+      template: "salvia",
+      size: "A6",
+    });
+    expect(posterOptionsSchema.parse({ size: "A7" }).size).toBe("A4");
   });
 });

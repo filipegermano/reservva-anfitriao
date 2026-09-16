@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { GuideData } from "@/lib/guide/data";
 
 export const posterSizes = {
+  A6: { width: 298, height: 420 },
   A5: { width: 420, height: 595 },
   A4: { width: 595, height: 842 },
   A3: { width: 842, height: 1191 },
@@ -66,6 +67,20 @@ export const posterTemplates: PosterTemplate[] = [
     foreground: "#123b3a",
     muted: "#5b7d7a",
     accent: "#0f9d8f",
+    accentForeground: "#ffffff",
+    headingFont: "Helvetica-Bold",
+    bodyFont: "Helvetica",
+    banner: true,
+  },
+  {
+    id: "salvia",
+    name: "Verde sálvia",
+    description: "Verde suave e natural, leve e acolhedor",
+    background: "#f3f5f0",
+    surface: "#ffffff",
+    foreground: "#26332a",
+    muted: "#6b786d",
+    accent: "#5f7d61",
     accentForeground: "#ffffff",
     headingFont: "Helvetica-Bold",
     bodyFont: "Helvetica",
