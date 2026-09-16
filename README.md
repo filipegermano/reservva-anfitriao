@@ -35,8 +35,8 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
 - `qrcode` para gerar os QR codes e `@react-pdf/renderer` para o cartaz em PDF
 - Armazenamento de objetos S3-compatible (`@aws-sdk/client-s3`) para as
   fotos (capa, ambientes, anfitrião e fotos importadas)
-- [Claude](https://docs.anthropic.com) (`@anthropic-ai/sdk`), opcional, para
-  gerar textos e interpretar anúncios colados
+- [Gemini](https://ai.google.dev) (API REST, `GEMINI_API_KEY`), opcional, para
+  gerar textos, interpretar anúncios colados e traduzir o guia
 - [Vitest](https://vitest.dev) para os testes
 
 ## Rodando localmente

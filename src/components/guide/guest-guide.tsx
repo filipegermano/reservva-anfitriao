@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowLeft,
+  Check,
   ChevronRight,
   CircleHelp,
   Home,
@@ -20,6 +21,13 @@ import { imageSrc } from "@/lib/guide/contacts";
 import { searchSections, sectionHasContent } from "@/lib/guide/presence";
 import { sectionMeta } from "@/lib/guide/sections";
 import { getTheme, homeTileColors, themeStyle, tileColors } from "@/lib/guide/themes";
+import { guideStrings } from "@/lib/guide/i18n";
+import {
+  applyTranslation,
+  availableLanguages,
+  languageLabels,
+  type GuideLanguage,
+} from "@/lib/guide/translation";
 import { cn } from "@/lib/utils";
 import {
   ContactButtons,
@@ -35,6 +43,11 @@ import {
   GMuted,
   GText,
 } from "@/components/guide/guide-ui";
+import {
+  GuideStringsProvider,
+  useGuideStrings,
+  usePreferredLanguage,
+} from "@/components/guide/guide-language";
 
 type View =
   | { kind: "cover" }
@@ -51,6 +64,15 @@ type GuestGuideProps = {
   preview?: boolean;
   /** Seção aberta no preview (acompanha a seção em edição). */
   focusSection?: GuideSectionData["type"] | null;
+  /** Idioma controlado pelo editor (só no preview). */
+  language?: GuideLanguage;
+  onLanguageChange?: (language: GuideLanguage) => void;
+};
+
+type LanguageControl = {
+  languages: GuideLanguage[];
+  language: GuideLanguage;
+  onLanguageChange: (language: GuideLanguage) => void;
 };
 
 function viewFromHash(hash: string, guide: GuideData): View | null {
@@ -108,7 +130,50 @@ function pushHash(hash: string) {
   hashListeners.forEach((listener) => listener());
 }
 
-export function GuestGuide({ guide, preview = false, focusSection = null }: GuestGuideProps) {
+/**
+ * Guia do hóspede. Escolhe o idioma (tradução do anfitrião + textos fixos
+ * da interface) e renderiza o guia nesse idioma.
+ */
+export function GuestGuide({
+  guide,
+  preview = false,
+  focusSection = null,
+  language: controlledLanguage,
+  onLanguageChange,
+}: GuestGuideProps) {
+  const languages = availableLanguages(guide);
+  const [preferred, setPreferred] = usePreferredLanguage(languages);
+  const language: GuideLanguage = preview
+    ? controlledLanguage && languages.includes(controlledLanguage)
+      ? controlledLanguage
+      : "pt"
+    : preferred;
+  const translated = useMemo(() => applyTranslation(guide, language), [guide, language]);
+
+  return (
+    <GuideStringsProvider value={guideStrings[language]}>
+      <GuestGuideView
+        guide={translated}
+        preview={preview}
+        focusSection={focusSection}
+        languages={languages}
+        language={language}
+        onLanguageChange={preview ? (onLanguageChange ?? (() => undefined)) : setPreferred}
+      />
+    </GuideStringsProvider>
+  );
+}
+
+function GuestGuideView({
+  guide,
+  preview,
+  focusSection,
+  languages,
+  language,
+  onLanguageChange,
+}: Required<Pick<GuestGuideProps, "guide" | "preview" | "focusSection">> & LanguageControl) {
+  const t = useGuideStrings();
+  const languageControl = { languages, language, onLanguageChange };
   const { property } = guide;
   const theme = getTheme(property.theme);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -170,8 +235,9 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
           <div className="absolute inset-0" style={{ background: theme.headerGradient }} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+        <LanguageSwitch {...languageControl} className="absolute top-4 right-4" />
         <div className="relative space-y-4 p-6 pb-10 text-center">
-          <p className="text-xs font-semibold tracking-[0.3em] uppercase opacity-90">Boas-vindas</p>
+          <p className="text-xs font-semibold tracking-[0.3em] uppercase opacity-90">{t.welcome}</p>
           <h1 className="font-[family-name:var(--g-heading)] text-3xl leading-tight font-bold">
             {property.name}
           </h1>
@@ -181,7 +247,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
             onClick={() => navigate({ kind: "home" })}
             className="w-full rounded-full bg-white px-6 py-3.5 text-base font-semibold text-neutral-900 shadow-lg transition active:scale-[0.98]"
           >
-            Explorar Guia
+            {t.exploreGuide}
           </button>
         </div>
       </div>
@@ -198,6 +264,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
             <div className="absolute inset-0" style={{ background: theme.headerGradient }} />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-black/5" />
+          <LanguageSwitch {...languageControl} className="absolute top-3 right-3" />
           <div className="absolute inset-x-0 bottom-0 space-y-1 p-5">
             {property.propertyType && (
               <span className="inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur">
@@ -217,7 +284,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
 
           {visibleSections.length === 0 ? (
             <GCard className="text-center">
-              <GMuted>Este guia ainda está sendo preparado.</GMuted>
+              <GMuted>{t.preparing}</GMuted>
             </GCard>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -255,12 +322,12 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
             <GCard className="flex items-center gap-3">
               <MapPin className="size-5 shrink-0 text-[var(--g-primary)]" />
               <div className="min-w-0 flex-1">
-                <GLabel>Endereço</GLabel>
+                <GLabel>{t.address}</GLabel>
                 <p className="text-sm">{property.address}</p>
               </div>
               {mapUrl && (
                 <a href={mapUrl} target="_blank" rel="noopener noreferrer" className={gButtonClass("outline")}>
-                  Mapa
+                  {t.map}
                 </a>
               )}
             </GCard>
@@ -281,7 +348,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
             <button
               type="button"
               onClick={() => navigate({ kind: "home" })}
-              aria-label="Voltar ao início"
+              aria-label={t.backHome}
               className="flex size-9 items-center justify-center rounded-full bg-white/20 backdrop-blur"
             >
               <ArrowLeft className="size-5" />
@@ -295,7 +362,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
                 className="border border-white/20"
               />
               <h1 className="font-[family-name:var(--g-heading)] text-xl font-bold">{section.title}</h1>
-              <p className="text-sm opacity-85">{meta.description}</p>
+              <p className="text-sm opacity-85">{t.sectionDescriptions[section.type]}</p>
             </div>
           </div>
           <div className="-mt-3 rounded-t-[var(--g-radius)] bg-[var(--g-bg)] p-4">
@@ -311,7 +378,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
   } else if (view.kind === "contact") {
     const mapUrl = mapsPlaceUrl(property);
     screen = (
-      <PanelScreen title="Contato" subtitle="Fale com o anfitrião" onBack={() => navigate({ kind: "home" })}>
+      <PanelScreen title={t.contactTitle} subtitle={t.contactSubtitle} onBack={() => navigate({ kind: "home" })}>
         {host?.type === "host" && (host.content.name || host.content.contacts.length > 0) ? (
           <>
             <GCard className="flex items-center gap-3">
@@ -326,19 +393,19 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
             </GCard>
             <ContactButtons contacts={host.content.contacts} />
             {host.content.contacts.every((contact) => !contact.value) && (
-              <GMuted className="text-center">Nenhuma forma de contato disponível.</GMuted>
+              <GMuted className="text-center">{t.noContact}</GMuted>
             )}
           </>
         ) : (
-          <GMuted className="text-center">Nenhuma forma de contato disponível.</GMuted>
+          <GMuted className="text-center">{t.noContact}</GMuted>
         )}
         {property.address && (
           <GCard>
-            <GLabel>Endereço do imóvel</GLabel>
+            <GLabel>{t.propertyAddress}</GLabel>
             <p className="mt-1 text-sm">{property.address}</p>
             {mapUrl && (
               <a href={mapUrl} target="_blank" rel="noopener noreferrer" className={cn(gButtonClass("outline"), "mt-3 w-full")}>
-                <MapPin className="size-4" /> Abrir no mapa
+                <MapPin className="size-4" /> {t.openMap}
               </a>
             )}
           </GCard>
@@ -356,13 +423,8 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
     );
   } else if (view.kind === "help") {
     screen = (
-      <PanelScreen title="Ajuda" subtitle="Como usar este guia" onBack={() => navigate({ kind: "home" })}>
-        {[
-          ["Navegue pelas seções", "Toque nos cards coloridos da página inicial para ver cada informação da sua estadia."],
-          ["Use a busca", "Toque na lupa do menu inferior para encontrar qualquer informação rapidamente (ex.: senha, check-out)."],
-          ["Volte ao início", "Use o botão Início do menu inferior para voltar à página principal a qualquer momento."],
-          ["Salve o guia", "Adicione esta página aos favoritos ou à tela inicial do celular para acessar sempre que precisar."],
-        ].map(([title, text], index) => (
+      <PanelScreen title={t.helpTitle} subtitle={t.helpSubtitle} onBack={() => navigate({ kind: "home" })}>
+        {t.helpSteps.map(([title, text], index) => (
           <GCard key={title} className="flex gap-3">
             <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--g-primary)] text-xs font-semibold text-[var(--g-primary-fg)]">
               {index + 1}
@@ -375,7 +437,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
         ))}
         <div className="grid grid-cols-2 gap-2">
           <button type="button" className={gButtonClass("outline")} onClick={() => navigate({ kind: "contact" })}>
-            <Phone className="size-4" /> Contato
+            <Phone className="size-4" /> {t.nav.contact}
           </button>
           {emergency && (
             <button
@@ -383,7 +445,7 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
               className={gButtonClass("outline")}
               onClick={() => navigate({ kind: "section", type: "emergency" })}
             >
-              <Siren className="size-4" /> Emergência
+              <Siren className="size-4" /> {t.emergency}
             </button>
           )}
         </div>
@@ -391,7 +453,28 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
     );
   } else {
     screen = (
-      <PanelScreen title="Mais" subtitle="Todas as seções do guia" onBack={() => navigate({ kind: "home" })}>
+      <PanelScreen title={t.moreTitle} subtitle={t.moreSubtitle} onBack={() => navigate({ kind: "home" })}>
+        {languages.length > 1 && (
+          <GCard className="space-y-2">
+            <GLabel>{t.language}</GLabel>
+            <div className="grid gap-2">
+              {languages.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onLanguageChange(option)}
+                  aria-pressed={option === language}
+                  className={cn(gButtonClass(option === language ? "primary" : "outline"), "justify-between")}
+                >
+                  <span>
+                    {languageLabels[option].flag} {languageLabels[option].name}
+                  </span>
+                  {option === language && <Check className="size-4" />}
+                </button>
+              ))}
+            </div>
+          </GCard>
+        )}
         <GCard className="divide-y divide-[var(--g-border)] p-0">
           {visibleSections.map((section) => {
             const meta = sectionMeta[section.type];
@@ -417,24 +500,25 @@ export function GuestGuide({ guide, preview = false, focusSection = null }: Gues
 
   const showNav = view.kind !== "cover";
   const navItems = [
-    { kind: "home" as const, label: "Início", icon: Home },
-    { kind: "contact" as const, label: "Contato", icon: Phone },
-    { kind: "search" as const, label: "Buscar", icon: Search },
-    { kind: "help" as const, label: "Ajuda", icon: CircleHelp },
-    { kind: "more" as const, label: "Mais", icon: MoreHorizontal },
+    { kind: "home" as const, label: t.nav.home, icon: Home },
+    { kind: "contact" as const, label: t.nav.contact, icon: Phone },
+    { kind: "search" as const, label: t.nav.search, icon: Search },
+    { kind: "help" as const, label: t.nav.help, icon: CircleHelp },
+    { kind: "more" as const, label: t.nav.more, icon: MoreHorizontal },
   ];
 
   return (
     <div
       ref={rootRef}
       style={themeStyle(theme)}
+      lang={t.locale}
       className="flex min-h-[inherit] flex-col font-[family-name:var(--font-sans)]"
     >
       <main className="flex min-h-[inherit] flex-1 flex-col pb-2">{screen}</main>
 
       {showNav && (
         <nav
-          aria-label="Navegação do guia"
+          aria-label={t.nav.label}
           className="sticky bottom-0 z-10 grid grid-cols-5 border-t border-[var(--g-border)] bg-[var(--g-surface)]/95 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur"
         >
           {navItems.map((item) => {
@@ -487,13 +571,14 @@ function PanelScreen({
   onBack: () => void;
   children: React.ReactNode;
 }) {
+  const t = useGuideStrings();
   return (
     <div>
       <div className="flex items-center gap-3 border-b border-[var(--g-border)] bg-[var(--g-surface)] px-4 py-3">
         <button
           type="button"
           onClick={onBack}
-          aria-label="Voltar ao início"
+          aria-label={t.backHome}
           className="flex size-9 items-center justify-center rounded-full bg-[var(--g-bg)]"
         >
           <ArrowLeft className="size-5" />
@@ -519,26 +604,26 @@ function SearchScreen({
   onBack: () => void;
   onOpen: (type: GuideSectionData["type"]) => void;
 }) {
+  const t = useGuideStrings();
   const [query, setQuery] = useState("");
   const results = searchSections(sections, guide.recommendations, query);
-  const suggestions = ["Wi-Fi", "Senha", "Check-out", "Regras", "Estacionamento"];
 
   return (
-    <PanelScreen title="Buscar" subtitle="Encontre qualquer informação" onBack={onBack}>
+    <PanelScreen title={t.searchTitle} subtitle={t.searchSubtitle} onBack={onBack}>
       <label className="flex items-center gap-2 rounded-full border border-[var(--g-border)] bg-[var(--g-surface)] px-4 py-2.5">
         <Search className="size-4 text-[var(--g-muted)]" />
         <input
           autoFocus
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Ex.: senha do wi-fi"
+          placeholder={t.searchPlaceholder}
           className="flex-1 bg-transparent text-sm outline-none"
         />
       </label>
 
       {query.trim().length < 2 ? (
         <div className="flex flex-wrap gap-2">
-          {suggestions.map((suggestion) => (
+          {t.searchSuggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
@@ -550,7 +635,7 @@ function SearchScreen({
           ))}
         </div>
       ) : results.length === 0 ? (
-        <GMuted className="text-center">Nada encontrado para “{query}”.</GMuted>
+        <GMuted className="text-center">{t.searchEmpty(query)}</GMuted>
       ) : (
         results.map(({ section, snippet }) => (
           <button key={section.id} type="button" onClick={() => onOpen(section.type)} className="w-full text-left">
@@ -569,6 +654,7 @@ function SearchScreen({
 }
 
 function ShareButton({ title, disabled }: { title: string; disabled: boolean }) {
+  const t = useGuideStrings();
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -585,7 +671,54 @@ function ShareButton({ title, disabled }: { title: string; disabled: boolean }) 
   return (
     <button type="button" onClick={share} disabled={disabled} className={cn(gButtonClass("outline"), "w-full")}>
       <Share2 className="size-4" />
-      {copied ? "Link copiado!" : "Compartilhar guia"}
+      {copied ? t.linkCopied : t.share}
     </button>
+  );
+}
+
+/** Botão compacto de idioma sobre a foto (só aparece com traduções). */
+function LanguageSwitch({
+  languages,
+  language,
+  onLanguageChange,
+  className,
+}: LanguageControl & { className?: string }) {
+  const t = useGuideStrings();
+  const [open, setOpen] = useState(false);
+  if (languages.length < 2) return null;
+
+  return (
+    <div className={cn("z-20", className)}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-label={`${t.language}: ${languageLabels[language].name}`}
+        className="flex items-center gap-1.5 rounded-full border border-white/30 bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur"
+      >
+        <span aria-hidden>{languageLabels[language].flag}</span>
+        {languageLabels[language].short}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-[var(--g-border)] bg-[var(--g-surface)] text-[var(--g-fg)] shadow-lg">
+          {languages.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                onLanguageChange(option);
+                setOpen(false);
+              }}
+              className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm hover:bg-[var(--g-bg)]"
+            >
+              <span>
+                {languageLabels[option].flag} {languageLabels[option].name}
+              </span>
+              {option === language && <Check className="size-4 text-[var(--g-primary)]" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

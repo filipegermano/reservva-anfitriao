@@ -230,9 +230,14 @@ export function useGuideEditor(initial: GuideData) {
     [],
   );
 
+  const setTranslations = useCallback((translations: GuideData["translations"]) => {
+    setGuide((current) => ({ ...current, translations }));
+  }, []);
+
   return {
     guide,
     save,
+    setTranslations,
     updateProperty,
     updatePropertyNow,
     setCoverImage,

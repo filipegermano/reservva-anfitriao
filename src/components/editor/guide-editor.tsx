@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Check,
   Eye,
+  Languages,
   Layers,
   Loader2,
   Monitor,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import type { GuideData } from "@/lib/guide/data";
+import { availableLanguages, languageLabels, type GuideLanguage } from "@/lib/guide/translation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { GuestGuide } from "@/components/guide/guest-guide";
@@ -23,14 +25,16 @@ import { EditorProvider } from "@/components/editor/editor-context";
 import { SectionsPanel, type EditingTarget } from "@/components/editor/sections-panel";
 import { SharePanel } from "@/components/editor/share-panel";
 import { ThemePanel } from "@/components/editor/theme-panel";
+import { LanguagesPanel } from "@/components/editor/languages-panel";
 import type { ReceivedFeedback } from "@/components/editor/sections/feedback-editor";
 import { useGuideEditor, type SaveState } from "@/components/editor/use-guide-editor";
 
-type Tab = "sections" | "theme" | "share" | "preview";
+type Tab = "sections" | "theme" | "languages" | "share" | "preview";
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }>; mobileOnly?: boolean }[] = [
   { id: "sections", label: "Seções", icon: Layers },
   { id: "theme", label: "Tema", icon: Palette },
+  { id: "languages", label: "Idiomas", icon: Languages },
   { id: "share", label: "Compartilhar", icon: Share2 },
   { id: "preview", label: "Prévia", icon: Eye, mobileOnly: true },
 ];
@@ -65,20 +69,48 @@ function PhonePreview({
   guide,
   focusSection,
   device,
+  language,
+  onLanguageChange,
 }: {
   guide: GuideData;
   focusSection: GuideData["sections"][number]["type"] | null;
   device: "phone" | "tablet";
+  language: GuideLanguage;
+  onLanguageChange: (language: GuideLanguage) => void;
 }) {
+  const languages = availableLanguages(guide);
   return (
-    <div
-      className={cn(
-        "mx-auto overflow-hidden border-[10px] border-neutral-900 bg-neutral-900 shadow-2xl",
-        device === "phone" ? "w-[340px] rounded-[2.5rem]" : "w-full max-w-[560px] rounded-[1.75rem]",
+    <div className="space-y-2">
+      {languages.length > 1 && (
+        <div className="flex justify-center gap-1">
+          {languages.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              size="xs"
+              variant={option === language ? "secondary" : "ghost"}
+              onClick={() => onLanguageChange(option)}
+            >
+              {languageLabels[option].flag} {languageLabels[option].short}
+            </Button>
+          ))}
+        </div>
       )}
-    >
-      <div className="relative h-[680px] overflow-y-auto overscroll-contain rounded-[inherit] bg-white [&>*]:min-h-[680px]">
-        <GuestGuide guide={guide} preview focusSection={focusSection} />
+      <div
+        className={cn(
+          "mx-auto overflow-hidden border-[10px] border-neutral-900 bg-neutral-900 shadow-2xl",
+          device === "phone" ? "w-[340px] rounded-[2.5rem]" : "w-full max-w-[560px] rounded-[1.75rem]",
+        )}
+      >
+        <div className="relative h-[680px] overflow-y-auto overscroll-contain rounded-[inherit] bg-white [&>*]:min-h-[680px]">
+          <GuestGuide
+            guide={guide}
+            preview
+            focusSection={focusSection}
+            language={language}
+            onLanguageChange={onLanguageChange}
+          />
+        </div>
       </div>
     </div>
   );
@@ -102,6 +134,7 @@ export function GuideEditor({
   const [tab, setTab] = useState<Tab>("sections");
   const [editing, setEditing] = useState<EditingTarget>(null);
   const [device, setDevice] = useState<"phone" | "tablet">("phone");
+  const [previewLanguage, setPreviewLanguage] = useState<GuideLanguage>("pt");
 
   const focusSection =
     editing && editing !== "basic"
@@ -178,10 +211,17 @@ export function GuideEditor({
               <SectionsPanel editing={editing} onEditingChange={setEditing} feedbacks={feedbacks} />
             )}
             {tab === "theme" && <ThemePanel />}
+            {tab === "languages" && <LanguagesPanel guideUrl={guideUrl} />}
             {tab === "share" && <SharePanel guideUrl={guideUrl} />}
             {tab === "preview" && (
               <div className="lg:hidden">
-                <PhonePreview guide={guide} focusSection={focusSection} device="phone" />
+                <PhonePreview
+                  guide={guide}
+                  focusSection={focusSection}
+                  device="phone"
+                  language={previewLanguage}
+                  onLanguageChange={setPreviewLanguage}
+                />
               </div>
             )}
           </div>
@@ -211,7 +251,13 @@ export function GuideEditor({
                   </Button>
                 </div>
               </div>
-              <PhonePreview guide={guide} focusSection={focusSection} device={device} />
+              <PhonePreview
+                guide={guide}
+                focusSection={focusSection}
+                device={device}
+                language={previewLanguage}
+                onLanguageChange={setPreviewLanguage}
+              />
             </div>
           </aside>
         </div>

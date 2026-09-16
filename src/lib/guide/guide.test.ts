@@ -181,6 +181,7 @@ describe("posterContent", () => {
         longitude: null,
       },
       recommendations: [],
+      translations: {},
       sections: [
         section("wifi", { networks: [{ name: "", password: "" }, { name: "Casa", password: "123" }] }),
         section("rules", { rules: Array.from({ length: 8 }, (_, i) => ({ text: `Regra ${i}` })) }),
@@ -190,7 +191,7 @@ describe("posterContent", () => {
     });
 
     expect(content.wifi).toEqual({ name: "Casa", password: "123" });
-    expect(content.rules).toHaveLength(5);
+    expect(content.rules).toHaveLength(8);
     expect(content.checkInTime).toBe("");
     expect(content.contact).toBe("Ana · 839");
   });

@@ -23,11 +23,9 @@ import type { GuideData, GuideRecommendation, GuideSectionData } from "@/lib/gui
 import { mapsSearchUrl } from "@/lib/guide/data";
 import { contactHref, externalUrl, imageSrc, phoneUrl } from "@/lib/guide/contacts";
 import { recommendationsFor } from "@/lib/guide/presence";
-import { contactTypeLabels, isInfoListType, type SectionContent } from "@/lib/guide/sections";
-import {
-  recommendationCategoryIcons,
-  recommendationCategoryLabels,
-} from "@/lib/recommendation-categories";
+import { isInfoListType, type SectionContent } from "@/lib/guide/sections";
+import { recommendationCategoryIcons } from "@/lib/recommendation-categories";
+import { useGuideStrings } from "@/components/guide/guide-language";
 import {
   gButtonClass,
   GCard,
@@ -54,6 +52,7 @@ const contactIcons = {
 };
 
 export function ContactButtons({ contacts }: { contacts: SectionContent<"host">["contacts"] }) {
+  const t = useGuideStrings();
   const valid = contacts.flatMap((contact) => {
     const href = contactHref(contact.type, contact.value);
     return href ? [{ ...contact, href }] : [];
@@ -74,7 +73,7 @@ export function ContactButtons({ contacts }: { contacts: SectionContent<"host">[
           >
             <Icon className="size-4" />
             <span className="truncate">
-              {contactTypeLabels[contact.type]} · {contact.value}
+              {t.contactTypes[contact.type]} · {contact.value}
             </span>
           </a>
         );
@@ -84,6 +83,7 @@ export function ContactButtons({ contacts }: { contacts: SectionContent<"host">[
 }
 
 function HostBody({ content }: { content: SectionContent<"host"> }) {
+  const t = useGuideStrings();
   const photo = imageSrc(content.photoUrl);
   return (
     <div className="space-y-4">
@@ -109,7 +109,7 @@ function HostBody({ content }: { content: SectionContent<"host"> }) {
 
       {content.cohosts.some((cohost) => cohost.name) && (
         <GCard className="space-y-3">
-          <GLabel>Outros contatos</GLabel>
+          <GLabel>{t.otherContacts}</GLabel>
           {content.cohosts
             .filter((cohost) => cohost.name)
             .map((cohost, index) => {
@@ -121,7 +121,7 @@ function HostBody({ content }: { content: SectionContent<"host"> }) {
                     {cohost.role && <GMuted>{cohost.role}</GMuted>}
                   </div>
                   {href && (
-                    <a href={href} className={gButtonClass("outline")} aria-label={`Ligar para ${cohost.name}`}>
+                    <a href={href} className={gButtonClass("outline")} aria-label={t.callTo(cohost.name)}>
                       <Phone className="size-4" />
                     </a>
                   )}
@@ -135,11 +135,12 @@ function HostBody({ content }: { content: SectionContent<"host"> }) {
 }
 
 function AboutBody({ content }: { content: SectionContent<"about"> }) {
+  const t = useGuideStrings();
   const stats = [
-    { icon: Users, value: content.guests, label: "hóspedes" },
-    { icon: DoorOpen, value: content.bedrooms, label: content.bedrooms === 1 ? "quarto" : "quartos" },
-    { icon: BedDouble, value: content.beds, label: content.beds === 1 ? "cama" : "camas" },
-    { icon: Bath, value: content.bathrooms, label: content.bathrooms === 1 ? "banheiro" : "banheiros" },
+    { icon: Users, value: content.guests, label: t.stats.guests },
+    { icon: DoorOpen, value: content.bedrooms, label: content.bedrooms === 1 ? t.stats.bedroom : t.stats.bedrooms },
+    { icon: BedDouble, value: content.beds, label: content.beds === 1 ? t.stats.bed : t.stats.beds },
+    { icon: Bath, value: content.bathrooms, label: content.bathrooms === 1 ? t.stats.bathroom : t.stats.bathrooms },
   ].filter((stat) => stat.value > 0);
 
   return (
@@ -164,7 +165,7 @@ function AboutBody({ content }: { content: SectionContent<"about"> }) {
       )}
       {content.features.length > 0 && (
         <GCard className="space-y-2">
-          <GLabel>Diferenciais</GLabel>
+          <GLabel>{t.highlights}</GLabel>
           <ul className="space-y-1.5">
             {content.features.map((feature, index) => (
               <li key={index} className="flex gap-2 text-sm">
@@ -180,6 +181,7 @@ function AboutBody({ content }: { content: SectionContent<"about"> }) {
 }
 
 function RoomsBody({ content }: { content: SectionContent<"rooms"> }) {
+  const t = useGuideStrings();
   return (
     <div className="space-y-4">
       {content.rooms
@@ -208,7 +210,7 @@ function RoomsBody({ content }: { content: SectionContent<"rooms"> }) {
                 <GHeading className="text-base">{room.name}</GHeading>
                 {room.description && <GMuted className="whitespace-pre-line">{room.description}</GMuted>}
                 {photos.length > 1 && (
-                  <p className="text-xs text-[var(--g-muted)]">{photos.length} fotos · deslize para ver</p>
+                  <p className="text-xs text-[var(--g-muted)]">{t.photosSwipe(photos.length)}</p>
                 )}
               </div>
             </GCard>
@@ -224,6 +226,7 @@ function wifiQrPayload(name: string, password: string) {
 }
 
 function WifiQr({ name, password }: { name: string; password: string }) {
+  const t = useGuideStrings();
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -240,33 +243,34 @@ function WifiQr({ name, password }: { name: string; password: string }) {
   return (
     <div className="flex items-center gap-3 rounded-[calc(var(--g-radius)*0.75)] bg-[var(--g-bg)] p-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={`QR code da rede ${name}`} className="size-24 rounded bg-white p-1" />
-      <GMuted>Aponte a câmera de outro aparelho para conectar automaticamente.</GMuted>
+      <img src={src} alt={t.wifiQrAlt(name)} className="size-24 rounded bg-white p-1" />
+      <GMuted>{t.wifiQrHint}</GMuted>
     </div>
   );
 }
 
 function WifiBody({ content }: { content: SectionContent<"wifi"> }) {
+  const t = useGuideStrings();
   const networks = content.networks.filter((network) => network.name || network.password);
   return (
     <div className="space-y-4">
       {networks.map((network, index) => (
         <GCard key={index} className="space-y-2">
-          {networks.length > 1 && <GLabel>Rede {index + 1}</GLabel>}
-          {network.name && <GCopyRow label="Rede" value={network.name} />}
-          {network.password && <GCopyRow label="Senha" value={network.password} />}
+          {networks.length > 1 && <GLabel>{t.networkN(index + 1)}</GLabel>}
+          {network.name && <GCopyRow label={t.network} value={network.name} />}
+          {network.password && <GCopyRow label={t.password} value={network.password} />}
           {network.name && <WifiQr name={network.name} password={network.password} />}
         </GCard>
       ))}
       {content.notes && (
         <GCard>
-          <GLabel className="mb-1">Informações</GLabel>
+          <GLabel className="mb-1">{t.information}</GLabel>
           <GText>{content.notes}</GText>
         </GCard>
       )}
       {content.tips && (
         <GCard>
-          <GLabel className="mb-1">Dicas de conexão</GLabel>
+          <GLabel className="mb-1">{t.connectionTips}</GLabel>
           <GText>{content.tips}</GText>
         </GCard>
       )}
@@ -310,6 +314,7 @@ function RulesBody({ content }: { content: SectionContent<"rules"> }) {
 }
 
 function EmergencyBody({ content }: { content: SectionContent<"emergency"> }) {
+  const t = useGuideStrings();
   return (
     <div className="space-y-2">
       {content.contacts
@@ -325,7 +330,7 @@ function EmergencyBody({ content }: { content: SectionContent<"emergency"> }) {
               {href && (
                 <a href={href} className={gButtonClass()}>
                   <Phone className="size-4" />
-                  Ligar
+                  {t.call}
                 </a>
               )}
             </GCard>
@@ -336,43 +341,44 @@ function EmergencyBody({ content }: { content: SectionContent<"emergency"> }) {
 }
 
 function CheckinBody({ content }: { content: SectionContent<"checkin"> }) {
+  const t = useGuideStrings();
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: "Check-in", value: content.checkInTime, hint: "a partir das" },
-          { label: "Check-out", value: content.checkOutTime, hint: "até as" },
+          { label: t.checkIn, value: content.checkInTime, hint: t.from },
+          { label: t.checkOut, value: content.checkOutTime, hint: t.until },
         ].map((item) => (
           <GCard key={item.label} className="text-center">
             <GLabel>{item.label}</GLabel>
             <p className="mt-1 text-xs text-[var(--g-muted)]">{item.value ? item.hint : "—"}</p>
-            <p className="text-2xl font-semibold">{item.value || "A combinar"}</p>
+            <p className="text-2xl font-semibold">{item.value || t.toArrange}</p>
           </GCard>
         ))}
       </div>
       {content.flexible && (
         <GMuted className="text-center">
-          Precisa de outro horário? Fale com o anfitrião — sempre que possível ajustamos.
+          {t.flexibleHours}
         </GMuted>
       )}
       {content.keyLocation && (
         <GCard className="flex gap-3">
           <KeyRound className="size-5 shrink-0 text-[var(--g-primary)]" />
           <div>
-            <GLabel>Chaves e acesso</GLabel>
+            <GLabel>{t.keysAccess}</GLabel>
             <GText className="mt-1">{content.keyLocation}</GText>
           </div>
         </GCard>
       )}
       {content.checkInInstructions && (
         <GCard>
-          <GLabel className="mb-1">Na chegada</GLabel>
+          <GLabel className="mb-1">{t.onArrival}</GLabel>
           <GText>{content.checkInInstructions}</GText>
         </GCard>
       )}
       {content.checkOutInstructions && (
         <GCard>
-          <GLabel className="mb-1">Na saída</GLabel>
+          <GLabel className="mb-1">{t.onDeparture}</GLabel>
           <GText>{content.checkOutInstructions}</GText>
         </GCard>
       )}
@@ -381,6 +387,7 @@ function CheckinBody({ content }: { content: SectionContent<"checkin"> }) {
 }
 
 function RecommendationList({ items }: { items: GuideRecommendation[] }) {
+  const t = useGuideStrings();
   const grouped = new Map<string, GuideRecommendation[]>();
   for (const item of items) grouped.set(item.category, [...(grouped.get(item.category) ?? []), item]);
 
@@ -392,7 +399,7 @@ function RecommendationList({ items }: { items: GuideRecommendation[] }) {
           <div key={category} className="space-y-2">
             <GLabel className="flex items-center gap-1.5">
               <Icon className="size-3.5" />
-              {recommendationCategoryLabels[category as GuideRecommendation["category"]]}
+              {t.categories[category as GuideRecommendation["category"]]}
             </GLabel>
             {list.map((item) => {
               const href = item.mapsUrl ? externalUrl(item.mapsUrl) : null;
@@ -407,7 +414,7 @@ function RecommendationList({ items }: { items: GuideRecommendation[] }) {
                       rel="noopener noreferrer"
                       className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[var(--g-primary)]"
                     >
-                      <MapPin className="size-3.5" /> Ver no mapa
+                      <MapPin className="size-3.5" /> {t.seeOnMap}
                     </a>
                   )}
                 </GCard>
@@ -420,11 +427,6 @@ function RecommendationList({ items }: { items: GuideRecommendation[] }) {
   );
 }
 
-const nearbySearches = {
-  local_tips: ["Mercados", "Farmácias", "Atrações turísticas", "Praias", "Padarias", "Postos de combustível"],
-  restaurants: ["Restaurantes", "Cafés", "Bares", "Pizzarias", "Delivery"],
-};
-
 function NearbyBody({
   guide,
   type,
@@ -434,6 +436,7 @@ function NearbyBody({
   type: "local_tips" | "restaurants";
   intro: string;
 }) {
+  const t = useGuideStrings();
   const items = recommendationsFor(type, guide.recommendations);
   const hasLocation = Boolean(
     guide.property.address || guide.property.city || guide.property.latitude != null,
@@ -448,18 +451,18 @@ function NearbyBody({
       )}
       {items.length > 0 && (
         <div className="space-y-2">
-          <GLabel>Indicações do anfitrião</GLabel>
+          <GLabel>{t.hostPicks}</GLabel>
           <RecommendationList items={items} />
         </div>
       )}
       {hasLocation && (
         <GCard className="space-y-3">
-          <GLabel>Explorar por perto</GLabel>
+          <GLabel>{t.exploreNearby}</GLabel>
           <div className="flex flex-wrap gap-2">
-            {nearbySearches[type].map((query) => (
+            {t.nearbySearches[type].map((query) => (
               <a
                 key={query}
-                href={mapsSearchUrl(query, guide.property)}
+                href={mapsSearchUrl(query, guide.property, t.nearQuery)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 rounded-full border border-[var(--g-border)] px-3 py-1.5 text-sm"
@@ -476,6 +479,7 @@ function NearbyBody({
 }
 
 function FeedbackBody({ guide, content, preview }: { guide: GuideData; content: SectionContent<"feedback">; preview: boolean }) {
+  const t = useGuideStrings();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [name, setName] = useState("");
@@ -519,17 +523,17 @@ function FeedbackBody({ guide, content, preview }: { guide: GuideData; content: 
       {content.showRating && (
         <GCard>
           {status === "sent" ? (
-            <p className="py-4 text-center font-medium">{content.thanksMessage || "Obrigado!"}</p>
+            <p className="py-4 text-center font-medium">{content.thanksMessage || t.thanks}</p>
           ) : (
             <form className="space-y-3" onSubmit={submit}>
-              <div className="flex justify-center gap-1" role="radiogroup" aria-label="Nota">
+              <div className="flex justify-center gap-1" role="radiogroup" aria-label={t.ratingLabel}>
                 {[1, 2, 3, 4, 5].map((value) => (
                   <button
                     key={value}
                     type="button"
                     role="radio"
                     aria-checked={rating === value}
-                    aria-label={`${value} estrela${value > 1 ? "s" : ""}`}
+                    aria-label={t.stars(value)}
                     onClick={() => setRating(value)}
                     className="p-1"
                   >
@@ -549,27 +553,27 @@ function FeedbackBody({ guide, content, preview }: { guide: GuideData; content: 
                     onChange={(event) => setComment(event.target.value)}
                     maxLength={1000}
                     rows={3}
-                    placeholder="Conte como foi sua estadia (opcional)"
+                    placeholder={t.commentPlaceholder}
                     className="w-full rounded-[calc(var(--g-radius)*0.75)] border border-[var(--g-border)] bg-[var(--g-bg)] p-3 text-sm outline-none focus:border-[var(--g-primary)]"
                   />
                   <input
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     maxLength={80}
-                    placeholder="Seu nome (opcional)"
+                    placeholder={t.namePlaceholder}
                     className="w-full rounded-[calc(var(--g-radius)*0.75)] border border-[var(--g-border)] bg-[var(--g-bg)] p-3 text-sm outline-none focus:border-[var(--g-primary)]"
                   />
                 </>
               )}
               {status === "error" && (
-                <p className="text-center text-sm text-red-600">Não foi possível enviar. Tente novamente.</p>
+                <p className="text-center text-sm text-red-600">{t.sendError}</p>
               )}
               <button
                 type="submit"
                 disabled={!rating || status === "sending" || preview}
                 className={cn(gButtonClass(), "w-full")}
               >
-                {preview ? "Envio desativado na pré-visualização" : status === "sending" ? "Enviando…" : "Enviar avaliação"}
+                {preview ? t.sendDisabledPreview : status === "sending" ? t.sending : t.sendReview}
               </button>
             </form>
           )}
@@ -589,7 +593,7 @@ function FeedbackBody({ guide, content, preview }: { guide: GuideData; content: 
                 className={gButtonClass("outline")}
               >
                 <Star className="size-4" />
-                Avaliar no {link.label}
+                {t.rateOn(link.label)}
               </a>
             ))}
           </div>
@@ -598,7 +602,7 @@ function FeedbackBody({ guide, content, preview }: { guide: GuideData; content: 
 
       {contacts.some((contact) => contact.value) && (
         <div className="space-y-2">
-          <GLabel>Fale com a gente</GLabel>
+          <GLabel>{t.talkToUs}</GLabel>
           <ContactButtons contacts={contacts} />
         </div>
       )}
@@ -659,9 +663,10 @@ export function GuideSectionBody({ guide, section, preview }: BodyProps) {
 }
 
 export function EmptySectionNotice() {
+  const t = useGuideStrings();
   return (
     <GCard className="text-center">
-      <GMuted>Esta seção ainda está vazia. Preencha no editor para ela aparecer para os hóspedes.</GMuted>
+      <GMuted>{t.emptySection}</GMuted>
     </GCard>
   );
 }

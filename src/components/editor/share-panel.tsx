@@ -64,6 +64,7 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
   const [lang, setLang] = useState<keyof typeof posterLanguages>("pt");
   const [showImage, setShowImage] = useState(true);
   const [showWifi, setShowWifi] = useState(true);
+  const [showContact, setShowContact] = useState(true);
   const [showRules, setShowRules] = useState(true);
   const [previewKey, setPreviewKey] = useState(0);
 
@@ -73,6 +74,7 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
     lang,
     showImage: showImage ? "1" : "0",
     showWifi: showWifi ? "1" : "0",
+    showContact: showContact ? "1" : "0",
     showRules: showRules ? "1" : "0",
   }).toString();
   const posterUrl = `/api/properties/${propertyId}/poster?${posterQuery}`;
@@ -229,7 +231,7 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
             <span>
               Mostrar foto
@@ -250,6 +252,10 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
           <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
             Mostrar regras
             <Switch checked={showRules} onCheckedChange={setShowRules} />
+          </label>
+          <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
+            Mostrar contato
+            <Switch checked={showContact} onCheckedChange={setShowContact} />
           </label>
         </div>
 
@@ -285,7 +291,8 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          O cartaz usa a foto de capa, o Wi-Fi, os horários, as primeiras regras e o contato do anfitrião cadastrados no guia.
+          O cartaz usa a foto de capa, o Wi-Fi, os horários, as regras e o contato do anfitrião cadastrados no guia. Em
+          inglês ou espanhol, usa a tradução feita na aba Idiomas (sem ela, só os títulos do cartaz mudam de idioma).
         </p>
       </Panel>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useGuideStrings } from "@/components/guide/guide-language";
 
 /**
  * Primitivas visuais do guia do hóspede. As cores vêm das variáveis CSS do
@@ -77,6 +78,7 @@ export function GText({ className, ...props }: React.ComponentProps<"p">) {
 }
 
 export function GCopyRow({ label, value }: { label: string; value: string }) {
+  const t = useGuideStrings();
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -98,7 +100,7 @@ export function GCopyRow({ label, value }: { label: string; value: string }) {
       <button
         type="button"
         onClick={copy}
-        aria-label={`Copiar ${label.toLowerCase()}`}
+        aria-label={t.copy(label)}
         className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--g-surface)] text-[var(--g-primary)] shadow-sm"
       >
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}

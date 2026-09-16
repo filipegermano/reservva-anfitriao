@@ -44,6 +44,9 @@ model Property {
   publishedAt DateTime?
   viewCount   Int       @default(0)
 
+  // Traduções do conteúdo por idioma (ver src/lib/guide/translation.ts)
+  translations Json?
+
   // Anúncio de origem, quando o guia foi importado (Airbnb etc.)
   sourceUrl String?
   latitude  Float?

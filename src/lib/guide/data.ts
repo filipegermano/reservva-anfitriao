@@ -4,6 +4,7 @@ import type {
   Recommendation,
   RecommendationCategory,
 } from "@/generated/prisma/client";
+import { parseTranslations, type GuideTranslations } from "@/lib/guide/translation";
 import {
   isSectionType,
   parseSectionContent,
@@ -53,6 +54,7 @@ export type GuideData = {
   property: GuideProperty;
   sections: GuideSectionData[];
   recommendations: GuideRecommendation[];
+  translations: GuideTranslations;
 };
 
 export const guideInclude = {
@@ -95,6 +97,7 @@ export function toGuideData(
     sections: property.sections
       .map(toSectionData)
       .filter((section): section is GuideSectionData => section !== null),
+    translations: parseTranslations(property.translations),
     recommendations: property.recommendations.map((recommendation) => ({
       id: recommendation.id,
       category: recommendation.category,
@@ -106,12 +109,16 @@ export function toGuideData(
 }
 
 /** Link de busca no Google Maps perto do imóvel. */
-export function mapsSearchUrl(query: string, property: Pick<GuideProperty, "address" | "city" | "latitude" | "longitude">) {
+export function mapsSearchUrl(
+  query: string,
+  property: Pick<GuideProperty, "address" | "city" | "latitude" | "longitude">,
+  nearWord = "perto de",
+) {
   const near =
     property.latitude != null && property.longitude != null
       ? `${property.latitude},${property.longitude}`
       : [property.address, property.city].filter(Boolean).join(", ");
-  const q = near ? `${query} perto de ${near}` : query;
+  const q = near ? `${query} ${nearWord} ${near}` : query;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 

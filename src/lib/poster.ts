@@ -184,6 +184,10 @@ export const posterOptionsSchema = z.object({
     .enum(["0", "1"])
     .transform((value) => value === "1")
     .catch(true),
+  showContact: z
+    .enum(["0", "1"])
+    .transform((value) => value === "1")
+    .catch(true),
   showWifi: z
     .enum(["0", "1"])
     .transform((value) => value === "1")
@@ -203,11 +207,6 @@ export type PosterContent = {
   contact: string;
   rules: string[];
 };
-
-function truncate(value: string, max: number): string {
-  const clean = value.replace(/\s+/g, " ").trim();
-  return clean.length <= max ? clean : `${clean.slice(0, max - 1).replace(/\s+\S*$/, "")}…`;
-}
 
 export function posterContent({ property, sections }: GuideData): PosterContent {
   const enabled = sections.filter((section) => section.enabled);
@@ -229,9 +228,9 @@ export function posterContent({ property, sections }: GuideData): PosterContent 
     checkInTime: checkin?.checkInTime ?? "",
     checkOutTime: checkin?.checkOutTime ?? "",
     contact: contact ? [host?.name, contact.value].filter(Boolean).join(" · ") : "",
+    // O cartaz decide quantas cabem (ver níveis de compactação do PDF).
     rules: (find("rules")?.content.rules ?? [])
-      .map((rule) => truncate(rule.text, 90))
-      .filter(Boolean)
-      .slice(0, 5),
+      .map((rule) => rule.text.replace(/\s+/g, " ").trim())
+      .filter(Boolean),
   };
 }
