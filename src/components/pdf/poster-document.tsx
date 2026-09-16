@@ -1,144 +1,269 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
-import type { Property } from "@/generated/prisma/client";
+import {
+  posterLanguages,
+  posterSizes,
+  type PosterContent,
+  type PosterLanguage,
+  type PosterSize,
+  type PosterTemplate,
+} from "@/lib/poster";
 
-const styles = StyleSheet.create({
-  page: {
-    padding: 56,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: "100%",
-    fontFamily: "Helvetica",
-  },
-  header: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 8,
-  },
-  eyebrow: {
-    fontSize: 12,
-    color: "#6b7280",
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: "Helvetica-Bold",
-    textAlign: "center",
-  },
-  address: {
-    fontSize: 12,
-    color: "#6b7280",
-    textAlign: "center",
-  },
-  body: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 20,
-  },
-  message: {
-    fontSize: 14,
-    textAlign: "center",
-    color: "#374151",
-    maxWidth: 360,
-    lineHeight: 1.5,
-  },
-  qrFrame: {
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-  },
-  qrImage: {
-    width: 220,
-    height: 220,
-  },
-  helper: {
-    fontSize: 11,
-    color: "#6b7280",
-    textAlign: "center",
-  },
-  wifiBox: {
-    display: "flex",
-    flexDirection: "row",
-    gap: 24,
-    marginTop: 8,
-  },
-  wifiItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  wifiLabel: {
-    fontSize: 9,
-    color: "#9ca3af",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  wifiValue: {
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
-  },
-  footer: {
-    fontSize: 10,
-    color: "#9ca3af",
-  },
-});
-
-export function PosterDocument({
-  property,
-  guideUrl,
-  qrCodeDataUrl,
-}: {
-  property: Property;
+type PosterDocumentProps = {
+  content: PosterContent;
+  template: PosterTemplate;
+  size: PosterSize;
+  lang: PosterLanguage;
+  showWifi: boolean;
+  showRules: boolean;
   guideUrl: string;
   qrCodeDataUrl: string;
-}) {
+};
+
+/** Os estilos são pensados em A4 e escalados para os outros tamanhos. */
+function createStyles(template: PosterTemplate, size: PosterSize, titleLength: number) {
+  const k = posterSizes[size].width / posterSizes.A4.width;
+  const s = (value: number) => value * k;
+  const titleSize = titleLength > 48 ? 26 : titleLength > 28 ? 32 : 40;
+
+  return StyleSheet.create({
+    page: {
+      backgroundColor: template.background,
+      color: template.foreground,
+      fontFamily: template.bodyFont,
+      padding: s(40),
+      display: "flex",
+      flexDirection: "column",
+    },
+    header: {
+      alignItems: "center",
+      paddingVertical: s(template.banner ? 28 : 16),
+      paddingHorizontal: s(24),
+      borderRadius: s(18),
+      backgroundColor: template.banner ? template.accent : "transparent",
+      color: template.banner ? template.accentForeground : template.foreground,
+    },
+    eyebrow: {
+      fontSize: s(12),
+      letterSpacing: s(4),
+      textTransform: "uppercase",
+      opacity: 0.85,
+    },
+    title: {
+      fontFamily: template.headingFont,
+      fontSize: s(titleSize),
+      textAlign: "center",
+      marginTop: s(8),
+      lineHeight: 1.15,
+    },
+    city: {
+      fontSize: s(11),
+      marginTop: s(6),
+      opacity: 0.8,
+    },
+    divider: {
+      width: s(60),
+      height: s(2),
+      marginTop: s(14),
+      backgroundColor: template.banner ? template.accentForeground : template.accent,
+    },
+    message: {
+      fontSize: s(13),
+      textAlign: "center",
+      color: template.muted,
+      marginTop: s(18),
+      marginHorizontal: s(30),
+      lineHeight: 1.5,
+    },
+    grid: {
+      display: "flex",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: s(10),
+      marginTop: s(20),
+    },
+    card: {
+      flexGrow: 1,
+      flexBasis: s(150),
+      backgroundColor: template.surface,
+      borderRadius: s(12),
+      padding: s(12),
+      borderWidth: s(1),
+      borderColor: template.background === "#ffffff" ? "#e5e5e5" : template.surface,
+    },
+    label: {
+      fontSize: s(8.5),
+      letterSpacing: s(1.5),
+      textTransform: "uppercase",
+      color: template.accent,
+      fontFamily: template.headingFont,
+    },
+    value: {
+      fontSize: s(13),
+      fontFamily: template.headingFont,
+      marginTop: s(4),
+    },
+    detail: {
+      fontSize: s(9.5),
+      color: template.muted,
+      marginTop: s(2),
+    },
+    rules: {
+      marginTop: s(16),
+      backgroundColor: template.surface,
+      borderRadius: s(12),
+      padding: s(14),
+    },
+    rule: {
+      display: "flex",
+      flexDirection: "row",
+      marginTop: s(6),
+    },
+    bullet: {
+      width: s(12),
+      fontSize: s(10.5),
+      color: template.accent,
+    },
+    ruleText: {
+      flex: 1,
+      fontSize: s(10.5),
+      lineHeight: 1.35,
+    },
+    qrSection: {
+      marginTop: "auto",
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: s(18),
+      padding: s(16),
+      borderRadius: s(16),
+      backgroundColor: template.accent,
+      color: template.accentForeground,
+    },
+    qrFrame: {
+      backgroundColor: "#ffffff",
+      borderRadius: s(10),
+      padding: s(6),
+    },
+    qrImage: {
+      width: s(120),
+      height: s(120),
+    },
+    qrTexts: {
+      flex: 1,
+    },
+    qrTitle: {
+      fontFamily: template.headingFont,
+      fontSize: s(16),
+      lineHeight: 1.25,
+    },
+    qrDetail: {
+      fontSize: s(10),
+      marginTop: s(6),
+      opacity: 0.85,
+    },
+    qrUrl: {
+      fontSize: s(8.5),
+      marginTop: s(8),
+      opacity: 0.75,
+    },
+    footer: {
+      fontSize: s(8),
+      textAlign: "center",
+      color: template.muted,
+      marginTop: s(10),
+    },
+  });
+}
+
+export function PosterDocument({
+  content,
+  template,
+  size,
+  lang,
+  showWifi,
+  showRules,
+  guideUrl,
+  qrCodeDataUrl,
+}: PosterDocumentProps) {
+  const t = posterLanguages[lang];
+  const styles = createStyles(template, size, content.name.length);
+  const wifi = showWifi ? content.wifi : null;
+  const rules = showRules ? content.rules : [];
+
   return (
-    <Document title={`Cartaz — ${property.name}`}>
-      <Page size="A4" style={styles.page}>
+    <Document title={`Cartaz — ${content.name}`}>
+      <Page size={size} style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Bem-vindo(a)</Text>
-          <Text style={styles.title}>{property.name}</Text>
-          {property.address ? <Text style={styles.address}>{property.address}</Text> : null}
+          <Text style={styles.eyebrow}>{t.eyebrow}</Text>
+          <Text style={styles.title}>{content.name}</Text>
+          {content.city ? <Text style={styles.city}>{content.city}</Text> : null}
+          <View style={styles.divider} />
         </View>
 
-        <View style={styles.body}>
-          <Text style={styles.message}>
-            {property.welcomeMessage ??
-              "Escaneie o QR code abaixo para acessar o guia completo do hóspede: Wi-Fi, horários de check-in e check-out, regras da casa e dicas da região."}
-          </Text>
+        {content.welcomeMessage && lang === "pt" ? (
+          <Text style={styles.message}>{content.welcomeMessage}</Text>
+        ) : null}
 
+        <View style={styles.grid}>
+          {wifi ? (
+            <View style={styles.card}>
+              <Text style={styles.label}>{t.wifi}</Text>
+              {wifi.name ? <Text style={styles.value}>{wifi.name}</Text> : null}
+              {wifi.password ? (
+                <Text style={styles.detail}>
+                  {t.password}: {wifi.password}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+          {content.checkInTime ? (
+            <View style={styles.card}>
+              <Text style={styles.label}>{t.checkIn}</Text>
+              <Text style={styles.value}>{content.checkInTime}</Text>
+              <Text style={styles.detail}>{t.from}</Text>
+            </View>
+          ) : null}
+          {content.checkOutTime ? (
+            <View style={styles.card}>
+              <Text style={styles.label}>{t.checkOut}</Text>
+              <Text style={styles.value}>{content.checkOutTime}</Text>
+              <Text style={styles.detail}>{t.until}</Text>
+            </View>
+          ) : null}
+          {content.contact ? (
+            <View style={styles.card}>
+              <Text style={styles.label}>{t.contact}</Text>
+              <Text style={styles.value}>{content.contact}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {rules.length > 0 ? (
+          <View style={styles.rules}>
+            <Text style={styles.label}>{t.rules}</Text>
+            {rules.map((rule, index) => (
+              <View key={index} style={styles.rule}>
+                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.ruleText}>{rule}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <View style={styles.qrSection}>
           <View style={styles.qrFrame}>
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image src={qrCodeDataUrl} style={styles.qrImage} />
           </View>
-
-          <Text style={styles.helper}>{guideUrl}</Text>
-
-          {(property.wifiName || property.wifiPassword) && (
-            <View style={styles.wifiBox}>
-              {property.wifiName && (
-                <View style={styles.wifiItem}>
-                  <Text style={styles.wifiLabel}>Wi-Fi</Text>
-                  <Text style={styles.wifiValue}>{property.wifiName}</Text>
-                </View>
-              )}
-              {property.wifiPassword && (
-                <View style={styles.wifiItem}>
-                  <Text style={styles.wifiLabel}>Senha</Text>
-                  <Text style={styles.wifiValue}>{property.wifiPassword}</Text>
-                </View>
-              )}
-            </View>
-          )}
+          <View style={styles.qrTexts}>
+            <Text style={styles.qrTitle}>{t.scan}</Text>
+            <Text style={styles.qrDetail}>{t.scanDetail}</Text>
+            <Text style={styles.qrUrl}>{guideUrl}</Text>
+          </View>
         </View>
 
-        <Text style={styles.footer}>Guia digital criado com Reservva Anfitrião</Text>
+        <Text style={styles.footer}>{t.footer}</Text>
       </Page>
     </Document>
   );

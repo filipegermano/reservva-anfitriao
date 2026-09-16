@@ -21,30 +21,57 @@ model User {
 }
 
 model Property {
-  id       String @id @default(cuid())
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name     String
-  slug     String @unique
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  slug   String @unique
 
-  address       String?
-  coverImageUrl String?
-  welcomeMessage String?
+  // Informações básicas & boas-vindas
+  propertyType     String?
+  address          String?
+  city             String?
+  coverImageUrl    String?
+  showCover        Boolean @default(true)
+  welcomeMessage   String?
+  shortDescription String?
 
-  wifiName     String?
-  wifiPassword String?
+  // Aparência (id de um tema em src/lib/guide/themes.ts)
+  theme String @default("grafite")
 
-  checkInTime          String?
-  checkInInstructions  String?
-  checkOutTime         String?
-  checkOutInstructions String?
+  // Guia só fica acessível aos hóspedes depois de publicado
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  viewCount   Int       @default(0)
 
-  houseRules String?
+  // Anúncio de origem, quando o guia foi importado (Airbnb etc.)
+  sourceUrl String?
+  latitude  Float?
+  longitude Float?
 
+  sections        GuideSection[]
   recommendations Recommendation[]
+  feedbacks       GuestFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Uma seção do guia digital (Wi-Fi, regras, anfitrião...). O conteúdo de
+// cada tipo é validado em src/lib/guide/sections.ts.
+model GuideSection {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  enabled    Boolean  @default(true)
+  order      Int      @default(0)
+  content    Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([propertyId, type])
 }
 
 enum RecommendationCategory {
@@ -57,13 +84,24 @@ enum RecommendationCategory {
 }
 
 model Recommendation {
-  id          String                  @id @default(cuid())
+  id          String                 @id @default(cuid())
   propertyId  String
-  property    Property                @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  category    RecommendationCategory  @default(OUTRO)
+  property    Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category    RecommendationCategory @default(OUTRO)
   name        String
   description String?
   mapsUrl     String?
-  order       Int                     @default(0)
-  createdAt   DateTime                @default(now())
+  order       Int                    @default(0)
+  createdAt   DateTime               @default(now())
+}
+
+// Avaliação deixada pelo hóspede na seção "Avaliação" do guia.
+model GuestFeedback {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rating     Int
+  comment    String?
+  guestName  String?
+  createdAt  DateTime @default(now())
 }

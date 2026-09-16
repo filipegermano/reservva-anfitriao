@@ -1,86 +1,78 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { MapPin, MessageCircleHeart } from "lucide-react";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { GuestGuideSections } from "@/components/guide/guest-guide-sections";
+import { guideInclude, toGuideData } from "@/lib/guide/data";
+import { imageSrc } from "@/lib/guide/contacts";
+import { getTheme } from "@/lib/guide/themes";
+import { GuestGuide } from "@/components/guide/guest-guide";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 async function getProperty(slug: string) {
-  return prisma.property.findUnique({
-    where: { slug },
-    include: { recommendations: { orderBy: { order: "asc" } } },
-  });
+  return prisma.property.findUnique({ where: { slug }, include: guideInclude });
+}
+
+/** Rascunhos só aparecem para o próprio anfitrião (pré-visualização). */
+async function canView(property: { published: boolean; userId: string }) {
+  if (property.published) return true;
+  const session = await auth();
+  return session?.user?.id === property.userId;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const property = await getProperty(slug);
 
-  if (!property) return {};
+  if (!property || !(await canView(property))) return {};
+
+  const cover = imageSrc(property.coverImageUrl);
+  const description =
+    property.shortDescription ?? property.welcomeMessage ?? `Guia digital de ${property.name}`;
 
   return {
     title: `Guia do hóspede — ${property.name}`,
-    description: property.welcomeMessage ?? `Guia digital de ${property.name}`,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: {
+      title: property.name,
+      description,
+      images: cover ? [cover] : undefined,
+    },
   };
+}
+
+export async function generateViewport({ params }: PageProps): Promise<Viewport> {
+  const { slug } = await params;
+  const property = await prisma.property.findUnique({ where: { slug }, select: { theme: true } });
+  return { themeColor: getTheme(property?.theme).primary };
 }
 
 export default async function GuestGuidePage({ params }: PageProps) {
   const { slug } = await params;
   const property = await getProperty(slug);
 
-  if (!property) notFound();
+  if (!property || !(await canView(property))) notFound();
+
+  if (property.published) {
+    await prisma.property.update({
+      where: { id: property.id },
+      data: { viewCount: { increment: 1 } },
+    });
+  }
+
+  const guide = toGuideData(property);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-16">
-      <div
-        className="relative h-56 bg-gradient-to-br from-primary/80 to-primary bg-cover bg-center sm:h-64"
-        style={
-          property.coverImageUrl
-            ? { backgroundImage: `url(${property.coverImageUrl})` }
-            : undefined
-        }
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
-      </div>
-
-      <div className="relative z-10 mx-auto -mt-8 max-w-xl px-4">
-        <div className="rounded-2xl border bg-card p-5 text-card-foreground shadow-lg">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Guia do hóspede
-          </p>
-          <h1 className="mt-1 font-heading text-2xl font-semibold">{property.name}</h1>
-          {property.address && (
-            <p className="mt-1.5 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="size-3.5" />
-              {property.address}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-4 space-y-4">
-          {property.welcomeMessage && (
-            <div className="rounded-2xl bg-primary/10 p-4">
-              <div className="flex gap-2.5">
-                <MessageCircleHeart className="size-5 shrink-0 text-primary" />
-                <p className="text-sm leading-relaxed text-foreground">
-                  {property.welcomeMessage}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <GuestGuideSections property={property} />
-
-          <p className="pt-4 text-center text-xs text-muted-foreground">
-            Guia criado com{" "}
-            <Link href="/" className="underline underline-offset-4">
-              Reservva Anfitrião
-            </Link>
-          </p>
-        </div>
+    <div className="min-h-dvh" style={{ background: getTheme(property.theme).background }}>
+      {!property.published && (
+        <p className="bg-amber-100 px-4 py-2 text-center text-xs font-medium text-amber-900">
+          Pré-visualização: este guia ainda não foi publicado e só você consegue vê-lo.
+        </p>
+      )}
+      <div className="mx-auto min-h-dvh max-w-md shadow-xl">
+        <GuestGuide guide={guide} />
       </div>
     </div>
   );

@@ -6,13 +6,24 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
 
 ## O que faz
 
-- **Guia digital do hóspede** — uma página pública (`/g/[slug]`), acessível por
-  link ou QR code, com wi-fi, horários e instruções de check-in/check-out,
-  regras da casa e recomendações locais (restaurantes, atrações, etc).
-- **Cartaz para impressão** — PDF em A4, pronto para imprimir, com QR code
-  apontando para o guia digital.
-- **Painel do anfitrião** — cadastro de imóveis e edição do conteúdo do guia,
-  atrás de autenticação própria (e-mail/senha).
+- **Importar anúncio** — cola o link do Airbnb e o guia vem pré-preenchido
+  (nome, capacidade, horários, regras, comodidades, fotos por ambiente e
+  anfitrião). Outros sites são lidos via JSON-LD/Open Graph; com IA
+  configurada, também dá para colar o texto do anúncio.
+- **Guia digital do hóspede** — página pública (`/g/[slug]`), acessível por
+  link ou QR code, montada com seções modulares (Wi-Fi, check-in/out, regras,
+  comodidades, ambientes, anfitrião, emergência, dicas locais, restaurantes,
+  avaliação, transporte e outras). Tem capa de entrada, busca, navegação
+  inferior, QR code de conexão ao Wi-Fi e avaliação pelos hóspedes. Só fica
+  acessível depois de publicado.
+- **Editor** — seções com ativar/desativar, reordenar e editar, prévia ao vivo
+  em moldura de celular, salvamento automático, temas visuais (Grafite é o
+  padrão) e "Gerar com IA" para textos (opcional).
+- **Compartilhar e cartaz** — publicação, link, QR code em PNG, envio por
+  WhatsApp/e-mail e cartaz em PDF com 5 modelos, tamanhos A5 a A1 e textos em
+  português, inglês ou espanhol.
+- **Painel do anfitrião** — lista de guias com status, visualizações e nota
+  média, atrás de autenticação própria (e-mail/senha).
 
 ## Stack
 
@@ -22,8 +33,11 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
   `reservva-backend`)
 - [Auth.js](https://authjs.dev) (Credentials) para login/registro
 - `qrcode` para gerar os QR codes e `@react-pdf/renderer` para o cartaz em PDF
-- Armazenamento de objetos S3-compatible (`@aws-sdk/client-s3`) para a foto
-  de capa do imóvel
+- Armazenamento de objetos S3-compatible (`@aws-sdk/client-s3`) para as
+  fotos (capa, ambientes, anfitrião e fotos importadas)
+- [Claude](https://docs.anthropic.com) (`@anthropic-ai/sdk`), opcional, para
+  gerar textos e interpretar anúncios colados
+- [Vitest](https://vitest.dev) para os testes
 
 ## Rodando localmente
 
@@ -41,6 +55,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 - `npm run dev` — servidor de desenvolvimento
 - `npm run build` — build de produção
 - `npm run lint` — eslint
+- `npm test` — testes (parser de anúncios, seções, segurança de URLs)
 - `npx prisma studio` — explorar o banco local
 
 ## Deploy (Railway)

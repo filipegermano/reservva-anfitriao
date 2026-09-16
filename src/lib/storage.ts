@@ -1,4 +1,12 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { randomUUID } from "node:crypto";
+
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 
 const globalForS3 = globalThis as unknown as { s3: S3Client | undefined };
 
@@ -27,8 +35,82 @@ export const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 
 const UPLOAD_PREFIX = "/api/uploads/";
 
-/** Extrai a key do bucket a partir de uma coverImageUrl gerada por este app. */
+/** Sem bucket configurado, fotos importadas ficam apontando para a origem. */
+export function isStorageConfigured(): boolean {
+  return Boolean(
+    uploadsBucket && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY,
+  );
+}
+
+/** Extrai a key do bucket a partir de uma URL gerada por este app. */
 export function keyFromUploadUrl(url: string | null): string | null {
   if (!url || !url.startsWith(UPLOAD_PREFIX)) return null;
   return url.slice(UPLOAD_PREFIX.length);
+}
+
+export function propertyPrefix(propertyId: string): string {
+  return `properties/${propertyId}/`;
+}
+
+/** Envia uma imagem para o bucket e retorna a URL servida pelo app. */
+export async function uploadPropertyImage(
+  propertyId: string,
+  kind: string,
+  body: Buffer,
+  contentType: string,
+): Promise<string> {
+  const extension = ALLOWED_IMAGE_TYPES[contentType];
+  if (!extension) throw new Error("Formato de imagem não suportado");
+
+  const key = `${propertyPrefix(propertyId)}${kind}-${randomUUID()}.${extension}`;
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: uploadsBucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
+  return `${UPLOAD_PREFIX}${key}`;
+}
+
+export async function deleteUpload(url: string | null): Promise<void> {
+  const key = keyFromUploadUrl(url);
+  if (!key) return;
+  await s3.send(new DeleteObjectCommand({ Bucket: uploadsBucket, Key: key })).catch(() => null);
+}
+
+/** Remove todos os arquivos de um imóvel (capa, fotos de ambientes, anfitrião). */
+export async function deletePropertyUploads(propertyId: string): Promise<void> {
+  if (!isStorageConfigured()) return;
+
+  let continuationToken: string | undefined;
+  do {
+    const listed = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: uploadsBucket,
+        Prefix: propertyPrefix(propertyId),
+        ContinuationToken: continuationToken,
+      }),
+    );
+    const keys = (listed.Contents ?? []).flatMap((object) => (object.Key ? [{ Key: object.Key }] : []));
+    if (keys.length > 0) {
+      await s3.send(
+        new DeleteObjectsCommand({ Bucket: uploadsBucket, Delete: { Objects: keys, Quiet: true } }),
+      );
+    }
+    continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+  } while (continuationToken);
+}
+
+/** Todas as URLs de upload deste app presentes num valor JSON. */
+export function collectUploadUrls(value: unknown, found = new Set<string>()): Set<string> {
+  if (typeof value === "string") {
+    if (keyFromUploadUrl(value)) found.add(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectUploadUrls(item, found);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) collectUploadUrls(item, found);
+  }
+  return found;
 }

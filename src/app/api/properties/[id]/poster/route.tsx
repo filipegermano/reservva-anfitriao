@@ -2,37 +2,52 @@ import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 
-import { auth } from "@/auth";
-import { getOwnedProperty } from "@/lib/property-access";
+import { prisma } from "@/lib/prisma";
+import { appOrigin, guideUrl, requireOwnedProperty } from "@/lib/api";
+import { guideInclude, toGuideData } from "@/lib/guide/data";
+import { posterContent, posterOptionsSchema, posterTemplates } from "@/lib/poster";
 import { PosterDocument } from "@/components/pdf/poster-document";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, { params }: RouteParams) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const property = await getOwnedProperty(id, session.user.id);
-  if (!property) {
-    return NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 });
-  }
+  const owned = await requireOwnedProperty(id);
+  if (owned.error) return owned.error;
 
-  const origin = new URL(request.url).origin;
-  const guideUrl = `${origin}/g/${property.slug}`;
+  const searchParams = new URL(request.url).searchParams;
+  const options = posterOptionsSchema.parse(Object.fromEntries(searchParams));
+  const template = posterTemplates.find((item) => item.id === options.template)!;
 
-  const qrCodeDataUrl = await QRCode.toDataURL(guideUrl, { margin: 1, width: 600 });
+  const property = await prisma.property.findUniqueOrThrow({
+    where: { id },
+    include: guideInclude,
+  });
+
+  const url = guideUrl(appOrigin(request), property.slug);
+  const qrCodeDataUrl = await QRCode.toDataURL(url, { margin: 1, width: 800 });
 
   const buffer = await renderToBuffer(
-    <PosterDocument property={property} guideUrl={guideUrl} qrCodeDataUrl={qrCodeDataUrl} />,
+    <PosterDocument
+      content={posterContent(toGuideData(property))}
+      template={template}
+      size={options.size}
+      lang={options.lang}
+      showWifi={options.showWifi}
+      showRules={options.showRules}
+      guideUrl={url}
+      qrCodeDataUrl={qrCodeDataUrl}
+    />,
   );
+
+  const filename = `cartaz-${property.slug}-${options.size.toLowerCase()}.pdf`;
+  const disposition = searchParams.has("download") ? "attachment" : "inline";
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="cartaz-${property.slug}.pdf"`,
+      "Content-Disposition": `${disposition}; filename="${filename}"`,
+      "Cache-Control": "private, no-store",
     },
   });
 }

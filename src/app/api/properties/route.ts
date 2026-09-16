@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { generateUniqueSlug } from "@/lib/slug";
+import { parseJsonBody } from "@/lib/api";
+import { createBlankGuide, createGuideFromDraft } from "@/lib/guide/create-guide";
 import { createPropertySchema } from "@/lib/validations/property";
 
 export async function GET() {
@@ -14,7 +15,7 @@ export async function GET() {
   const properties = await prisma.property.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { recommendations: true } } },
+    include: { _count: { select: { sections: true, feedbacks: true } } },
   });
 
   return NextResponse.json({ properties });
@@ -26,25 +27,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => null);
-  const parsed = createPropertySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Dados inválidos", issues: parsed.error.flatten().fieldErrors },
-      { status: 400 },
-    );
-  }
+  const { data, error } = await parseJsonBody(request, createPropertySchema);
+  if (error) return error;
 
-  const slug = await generateUniqueSlug(parsed.data.name);
-
-  const property = await prisma.property.create({
-    data: {
-      userId: session.user.id,
-      name: parsed.data.name,
-      address: parsed.data.address,
-      slug,
-    },
-  });
+  const property =
+    data.mode === "draft"
+      ? await createGuideFromDraft(session.user.id, data.draft)
+      : await createBlankGuide(session.user.id, data);
 
   return NextResponse.json({ property }, { status: 201 });
 }
