@@ -62,6 +62,7 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
   const [template, setTemplate] = useState("moderno");
   const [size, setSize] = useState<keyof typeof posterSizes>("A4");
   const [lang, setLang] = useState<keyof typeof posterLanguages>("pt");
+  const [showImage, setShowImage] = useState(true);
   const [showWifi, setShowWifi] = useState(true);
   const [showRules, setShowRules] = useState(true);
   const [previewKey, setPreviewKey] = useState(0);
@@ -70,6 +71,7 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
     template,
     size,
     lang,
+    showImage: showImage ? "1" : "0",
     showWifi: showWifi ? "1" : "0",
     showRules: showRules ? "1" : "0",
   }).toString();
@@ -227,7 +229,20 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
+            <span>
+              Mostrar foto
+              {!property.coverImageUrl && (
+                <span className="block text-xs text-muted-foreground">Adicione uma capa ao guia</span>
+              )}
+            </span>
+            <Switch
+              checked={showImage && Boolean(property.coverImageUrl)}
+              disabled={!property.coverImageUrl}
+              onCheckedChange={setShowImage}
+            />
+          </label>
           <label className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
             Mostrar Wi-Fi
             <Switch checked={showWifi} onCheckedChange={setShowWifi} />
@@ -270,7 +285,7 @@ export function SharePanel({ guideUrl }: { guideUrl: string }) {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          O cartaz usa o Wi-Fi, os horários, as primeiras regras e o contato do anfitrião cadastrados no guia.
+          O cartaz usa a foto de capa, o Wi-Fi, os horários, as primeiras regras e o contato do anfitrião cadastrados no guia.
         </p>
       </Panel>
 

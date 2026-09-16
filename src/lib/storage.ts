@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -113,4 +114,13 @@ export function collectUploadUrls(value: unknown, found = new Set<string>()): Se
     for (const item of Object.values(value)) collectUploadUrls(item, found);
   }
   return found;
+}
+
+/** Lê do bucket um arquivo enviado por este app (ex.: foto de capa). */
+export async function readUpload(url: string): Promise<Buffer | null> {
+  const key = keyFromUploadUrl(url);
+  if (!key || !isStorageConfigured()) return null;
+  const object = await s3.send(new GetObjectCommand({ Bucket: uploadsBucket, Key: key }));
+  const bytes = await object.Body?.transformToByteArray();
+  return bytes ? Buffer.from(bytes) : null;
 }

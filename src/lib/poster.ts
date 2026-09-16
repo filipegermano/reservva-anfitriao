@@ -180,6 +180,10 @@ export const posterOptionsSchema = z.object({
     .enum(["0", "1"])
     .transform((value) => value === "1")
     .catch(true),
+  showImage: z
+    .enum(["0", "1"])
+    .transform((value) => value === "1")
+    .catch(true),
   showWifi: z
     .enum(["0", "1"])
     .transform((value) => value === "1")

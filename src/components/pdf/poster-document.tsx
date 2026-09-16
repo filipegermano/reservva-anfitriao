@@ -18,10 +18,17 @@ type PosterDocumentProps = {
   showRules: boolean;
   guideUrl: string;
   qrCodeDataUrl: string;
+  /** Foto de capa já convertida (data URI JPEG); sem ela, só a faixa de cor. */
+  coverImage?: string | null;
 };
 
 /** Os estilos são pensados em A4 e escalados para os outros tamanhos. */
-function createStyles(template: PosterTemplate, size: PosterSize, titleLength: number) {
+function createStyles(
+  template: PosterTemplate,
+  size: PosterSize,
+  titleLength: number,
+  withImage: boolean,
+) {
   const k = posterSizes[size].width / posterSizes.A4.width;
   const s = (value: number) => value * k;
   // Em formatos pequenos (A6) o texto não encolhe na mesma proporção, para
@@ -38,13 +45,42 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
       display: "flex",
       flexDirection: "column",
     },
-    header: {
-      alignItems: "center",
-      paddingVertical: s(template.banner ? 28 : 16),
-      paddingHorizontal: s(24),
-      borderRadius: s(18),
-      backgroundColor: template.banner ? template.accent : "transparent",
-      color: template.banner ? template.accentForeground : template.foreground,
+    header: withImage
+      ? {
+          position: "relative",
+          overflow: "hidden",
+          alignItems: "center",
+          paddingTop: s(size === "A6" ? 56 : 90),
+          paddingBottom: s(24),
+          paddingHorizontal: s(24),
+          borderRadius: s(18),
+          backgroundColor: template.accent,
+          color: "#ffffff",
+        }
+      : {
+          alignItems: "center",
+          paddingVertical: s(template.banner ? 28 : 16),
+          paddingHorizontal: s(24),
+          borderRadius: s(18),
+          backgroundColor: template.banner ? template.accent : "transparent",
+          color: template.banner ? template.accentForeground : template.foreground,
+        },
+    headerImage: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      objectFit: "cover",
+    },
+    headerShade: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "#000000",
+      opacity: 0.45,
     },
     eyebrow: {
       fontSize: f(12),
@@ -69,7 +105,7 @@ function createStyles(template: PosterTemplate, size: PosterSize, titleLength: n
       width: s(60),
       height: s(2),
       marginTop: s(14),
-      backgroundColor: template.banner ? template.accentForeground : template.accent,
+      backgroundColor: withImage || template.banner ? "#ffffff" : template.accent,
     },
     message: {
       fontSize: f(13),
@@ -189,18 +225,27 @@ export function PosterDocument({
   showRules,
   guideUrl,
   qrCodeDataUrl,
+  coverImage,
 }: PosterDocumentProps) {
   const t = posterLanguages[lang];
-  const styles = createStyles(template, size, content.name.length);
+  const styles = createStyles(template, size, content.name.length, Boolean(coverImage));
   // A6 tem pouco espaço: menos regras e sem a mensagem de boas-vindas.
   const compact = size === "A6";
   const wifi = showWifi ? content.wifi : null;
-  const rules = showRules ? content.rules.slice(0, compact ? 3 : undefined) : [];
+  const maxRules = compact ? (coverImage ? 2 : 3) : coverImage ? 4 : 5;
+  const rules = showRules ? content.rules.slice(0, maxRules) : [];
 
   return (
     <Document title={`Cartaz — ${content.name}`}>
       <Page size={size} style={styles.page}>
         <View style={styles.header}>
+          {coverImage ? (
+            <>
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
+              <Image src={coverImage} style={styles.headerImage} />
+              <View style={styles.headerShade} />
+            </>
+          ) : null}
           <Text style={styles.eyebrow}>{t.eyebrow}</Text>
           <Text style={styles.title}>{content.name}</Text>
           {content.city ? <Text style={styles.city}>{content.city}</Text> : null}

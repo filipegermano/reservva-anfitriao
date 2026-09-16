@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { appOrigin, guideUrl, requireOwnedProperty } from "@/lib/api";
 import { guideInclude, toGuideData } from "@/lib/guide/data";
 import { posterContent, posterOptionsSchema, posterTemplates } from "@/lib/poster";
+import { loadPosterImage } from "@/lib/poster-image";
 import { PosterDocument } from "@/components/pdf/poster-document";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -25,7 +26,10 @@ export async function GET(request: Request, { params }: RouteParams) {
   });
 
   const url = guideUrl(appOrigin(request), property.slug);
-  const qrCodeDataUrl = await QRCode.toDataURL(url, { margin: 1, width: 800 });
+  const [qrCodeDataUrl, coverImage] = await Promise.all([
+    QRCode.toDataURL(url, { margin: 1, width: 800 }),
+    options.showImage ? loadPosterImage(property.coverImageUrl) : null,
+  ]);
 
   const buffer = await renderToBuffer(
     <PosterDocument
@@ -37,6 +41,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       showRules={options.showRules}
       guideUrl={url}
       qrCodeDataUrl={qrCodeDataUrl}
+      coverImage={coverImage}
     />,
   );
 
