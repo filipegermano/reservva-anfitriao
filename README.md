@@ -22,6 +22,12 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
 - **Compartilhar e cartaz** — publicação, link, QR code em PNG, envio por
   WhatsApp/e-mail e cartaz em PDF com 5 modelos, tamanhos A5 a A1 e textos em
   português, inglês ou espanhol.
+- **Calendário de reservas** — importa os calendários compartilhados (iCal) do
+  Airbnb, Booking e outros sites em `/app/calendario`: grade mensal com as
+  estadias por cor, próximas reservas, check-ins/check-outs da semana, taxa de
+  ocupação do mês e detalhes de cada reserva (datas, noites, link no site de
+  origem). A sincronização é só de leitura e roda ao abrir a página quando os
+  dados estão com mais de 30 minutos, ou no botão "Sincronizar".
 - **Painel do anfitrião** — lista de guias com status, visualizações e nota
   média, atrás de autenticação própria (e-mail/senha).
 
@@ -55,7 +61,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 - `npm run dev` — servidor de desenvolvimento
 - `npm run build` — build de produção
 - `npm run lint` — eslint
-- `npm test` — testes (parser de anúncios, seções, segurança de URLs)
+- `npm test` — testes (parser de anúncios, seções, segurança de URLs, calendário)
 - `npx prisma studio` — explorar o banco local
 
 ## Deploy (Railway)

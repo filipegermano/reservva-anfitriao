@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, FileText, Globe, Home, MapPin, Plus, Star } from "lucide-react";
+import { CalendarDays, Eye, FileText, Globe, Home, MapPin, Plus, Star } from "lucide-react";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -46,12 +46,20 @@ export default async function DashboardPage() {
           </h1>
           <p className="text-muted-foreground">Gerencie os guias digitais e cartazes dos seus imóveis.</p>
         </div>
-        <Button asChild>
-          <Link href="/app/propriedades/novo">
-            <Plus className="size-4" />
-            Criar guia
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/app/calendario">
+              <CalendarDays className="size-4" />
+              Calendário
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/app/propriedades/novo">
+              <Plus className="size-4" />
+              Criar guia
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

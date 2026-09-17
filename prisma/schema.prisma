@@ -11,13 +11,14 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
-  email        String     @unique
+  email        String         @unique
   passwordHash String
   properties   Property[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  calendars    CalendarFeed[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
 model Property {
@@ -55,6 +56,7 @@ model Property {
   sections        GuideSection[]
   recommendations Recommendation[]
   feedbacks       GuestFeedback[]
+  calendars       CalendarFeed[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -107,4 +109,47 @@ model GuestFeedback {
   comment    String?
   guestName  String?
   createdAt  DateTime @default(now())
+}
+
+// Calendário externo (iCal) exportado pelo Airbnb, Booking etc. Os eventos
+// são copiados para CalendarEvent a cada sincronização (ver src/lib/calendar).
+model CalendarFeed {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId   String?
+  property     Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  name         String
+  url          String
+  // airbnb | booking | outro
+  source       String
+  color        String
+  lastSyncedAt DateTime?
+  lastError    String?
+  events       CalendarEvent[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model CalendarEvent {
+  id             String       @id @default(cuid())
+  feedId         String
+  feed           CalendarFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  uid            String
+  // reserva | bloqueio
+  kind           String
+  summary        String?
+  description    String?
+  // Datas de check-in e check-out (dia inteiro, meia-noite UTC)
+  startDate      DateTime
+  endDate        DateTime
+  reservationUrl String?
+  phoneLast4     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([feedId, uid])
+  @@index([startDate, endDate])
 }
