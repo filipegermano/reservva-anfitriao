@@ -119,6 +119,8 @@ DATABASE_URL="postgresql://..." node scripts/sqlite-para-postgres.mjs prod.db
 ```
 
 Como o Postgres do Railway só é alcançável de dentro da rede privada do
-projeto, o script rodou no próprio container (`railway ssh`) — é por isso que
-`better-sqlite3` segue entre as dependências de produção. O arquivo
-`/data/prod.db` continua no volume como plano de volta.
+projeto, o script rodou no próprio container (`railway ssh`), com
+`better-sqlite3` temporariamente entre as dependências de produção — hoje ele
+é dependência de desenvolvimento, então rodar o script de novo lá dentro
+exigiria instalá-lo antes. O arquivo `/data/prod.db` continua no volume como
+plano de volta.
