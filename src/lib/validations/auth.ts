@@ -13,6 +13,8 @@ export const registerSchema = z.object({
   password: z
     .string()
     .min(8, "A senha deve ter pelo menos 8 caracteres"),
+  /** Quando vem de um convite, a pessoa entra direto na conta que convidou. */
+  inviteToken: z.string().trim().max(200).optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

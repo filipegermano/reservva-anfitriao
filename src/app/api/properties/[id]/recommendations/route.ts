@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getOwnedProperty } from "@/lib/property-access";
+import { requireOwnedProperty } from "@/lib/api";
 import { recommendationSchema } from "@/lib/validations/property";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: RouteParams) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  }
-
   const { id } = await params;
-  const property = await getOwnedProperty(id, session.user.id);
-  if (!property) {
-    return NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 });
-  }
+  const owned = await requireOwnedProperty(id);
+  if (owned.error) return owned.error;
 
   const body = await request.json().catch(() => null);
   const parsed = recommendationSchema.safeParse(body);

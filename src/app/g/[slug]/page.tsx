@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getSessionAccount } from "@/lib/account";
 import { guideInclude, toGuideData } from "@/lib/guide/data";
 import { imageSrc } from "@/lib/guide/contacts";
 import { getTheme } from "@/lib/guide/themes";
@@ -14,11 +14,11 @@ async function getProperty(slug: string) {
   return prisma.property.findUnique({ where: { slug }, include: guideInclude });
 }
 
-/** Rascunhos só aparecem para o próprio anfitrião (pré-visualização). */
-async function canView(property: { published: boolean; userId: string }) {
+/** Rascunhos só aparecem para os membros da conta (pré-visualização). */
+async function canView(property: { published: boolean; accountId: string }) {
   if (property.published) return true;
-  const session = await auth();
-  return session?.user?.id === property.userId;
+  const account = await getSessionAccount();
+  return account?.accounts.some(({ id }) => id === property.accountId) ?? false;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

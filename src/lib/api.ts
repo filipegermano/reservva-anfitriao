@@ -1,26 +1,37 @@
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 
-import { auth } from "@/auth";
-import { getOwnedProperty } from "@/lib/property-access";
+import { getSessionAccount, type SessionAccount } from "@/lib/account";
+import { getAccountProperty } from "@/lib/property-access";
 
 type OwnedPropertyResult =
-  | { property: NonNullable<Awaited<ReturnType<typeof getOwnedProperty>>>; userId: string; error?: never }
-  | { error: NextResponse; property?: never; userId?: never };
+  | {
+      property: NonNullable<Awaited<ReturnType<typeof getAccountProperty>>>;
+      account: SessionAccount;
+      error?: never;
+    }
+  | { error: NextResponse; property?: never; account?: never };
 
-/** Autentica o anfitrião e garante que o imóvel é dele. */
+/** Autentica o membro e garante que o imóvel é da conta ativa dele. */
 export async function requireOwnedProperty(propertyId: string): Promise<OwnedPropertyResult> {
-  const session = await auth();
-  if (!session?.user) {
+  const account = await getSessionAccount();
+  if (!account) {
     return { error: NextResponse.json({ error: "Não autenticado" }, { status: 401 }) };
   }
 
-  const property = await getOwnedProperty(propertyId, session.user.id);
+  const property = await getAccountProperty(propertyId, account.accountId);
   if (!property) {
     return { error: NextResponse.json({ error: "Imóvel não encontrado" }, { status: 404 }) };
   }
 
-  return { property, userId: session.user.id };
+  return { property, account };
+}
+
+/** Ações restritas ao dono da conta (excluir guia, gerenciar a equipe). */
+export function ownerOnly(account: SessionAccount): NextResponse | null {
+  return account.isOwner
+    ? null
+    : NextResponse.json({ error: "Só o dono da conta pode fazer isso" }, { status: 403 });
 }
 
 export async function parseJsonBody<T extends z.ZodType>(

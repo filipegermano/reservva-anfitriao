@@ -48,12 +48,12 @@ function replaceUrl(url: string, mapping: Map<string, string>): string {
   return mapping.get(url) ?? "";
 }
 
-export async function createGuideFromDraft(userId: string, draft: ListingDraft) {
+export async function createGuideFromDraft(accountId: string, draft: ListingDraft) {
   const slug = await generateUniqueSlug(draft.name);
 
   const property = await prisma.property.create({
     data: {
-      userId,
+      accountId,
       slug,
       name: draft.name,
       propertyType: draft.propertyType,
@@ -109,7 +109,7 @@ export async function createGuideFromDraft(userId: string, draft: ListingDraft) 
 
 /** Guia em branco: só as seções essenciais, prontas para preencher. */
 export async function createBlankGuide(
-  userId: string,
+  accountId: string,
   data: { name: string; address?: string; propertyType?: string },
 ) {
   const slug = await generateUniqueSlug(data.name);
@@ -117,7 +117,7 @@ export async function createBlankGuide(
 
   return prisma.property.create({
     data: {
-      userId,
+      accountId,
       slug,
       name: data.name,
       address: data.address,

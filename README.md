@@ -30,13 +30,18 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
   dados estão com mais de 30 minutos, ou no botão "Sincronizar".
 - **Painel do anfitrião** — lista de guias com status, visualizações e nota
   média, atrás de autenticação própria (e-mail/senha).
+- **Conta compartilhada** — guias, cartazes e calendários pertencem a uma
+  conta, e não a uma pessoa: em `/app/equipe` o dono gera um link de convite
+  (uso único, 7 dias) para outros anfitriões, recepção ou limpeza acessarem a
+  mesma área. Membros criam e editam guias e calendários; convidar, remover
+  pessoas e excluir guias ficam só com o dono. Quem participa de mais de uma
+  conta troca pelo seletor no topo.
 
 ## Stack
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
 - Tailwind CSS + [shadcn/ui](https://ui.shadcn.com) (Radix)
-- [Prisma](https://www.prisma.io) + SQLite (mesmo banco usado pelo
-  `reservva-backend`)
+- [Prisma](https://www.prisma.io) + PostgreSQL
 - [Auth.js](https://authjs.dev) (Credentials) para login/registro
 - `qrcode` para gerar os QR codes e `@react-pdf/renderer` para o cartaz em PDF
 - Armazenamento de objetos S3-compatible (`@aws-sdk/client-s3`) para as
@@ -47,12 +52,23 @@ digitais para hóspedes, inspirado no [anfitrian.com.br](https://anfitrian.com.b
 
 ## Rodando localmente
 
+Precisa de um PostgreSQL. Com Docker:
+
+```bash
+docker run -d --name reservva-anfitriao-db \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=reservva_anfitriao \
+  -p 5433:5432 postgres:17-alpine
+```
+
 ```bash
 npm install
-cp .env.example .env   # ajuste AUTH_SECRET e demais variáveis
+cp .env.example .env   # ajuste AUTH_SECRET, DATABASE_URL e demais variáveis
 npx prisma migrate dev
 npm run dev
 ```
+
+O `npm test` usa o mesmo banco do `DATABASE_URL` (os testes de integração
+criam e apagam os próprios registros).
 
 Abra [http://localhost:3000](http://localhost:3000).
 
@@ -61,25 +77,48 @@ Abra [http://localhost:3000](http://localhost:3000).
 - `npm run dev` — servidor de desenvolvimento
 - `npm run build` — build de produção
 - `npm run lint` — eslint
-- `npm test` — testes (parser de anúncios, seções, segurança de URLs, calendário)
+- `npm test` — testes (parser de anúncios, seções, segurança de URLs,
+  calendário, convites e acesso por conta)
 - `npx prisma studio` — explorar o banco local
+
+## Cadastro de novas contas
+
+O cadastro público em `/registrar` é controlado por `REGISTRATION_ENABLED` e
+vem **fechado por padrão**: sem `true` (ou `1`), a página responde 404, a
+`POST /api/register` responde 403 e os botões de "criar conta" saem da página
+inicial e do login. Convites de equipe continuam valendo mesmo com o cadastro
+fechado — quem abre um link de convite válido consegue criar o acesso.
 
 ## Deploy (Railway)
 
-Em produção no [Railway](https://railway.com), o SQLite precisa de um volume
-persistente — sem ele, o banco é perdido a cada deploy. Configuração usada:
+Em produção no [Railway](https://railway.com):
 
-- **Volume** montado em `/data`.
-- **Variáveis**: `DATABASE_URL=file:/data/prod.db`, `AUTH_SECRET` (forte,
-  gerado com `openssl rand -base64 33`), `AUTH_TRUST_HOST=true`, `AUTH_URL`
-  apontando para o domínio público do serviço.
+- **Banco**: serviço PostgreSQL do próprio Railway, com
+  `DATABASE_URL=${{Postgres.DATABASE_URL}}` (URL interna, sem sair da rede
+  privada do projeto).
+- **Variáveis**: `AUTH_SECRET` (forte, gerado com `openssl rand -base64 33`),
+  `AUTH_TRUST_HOST=true`, `AUTH_URL` apontando para o domínio público do
+  serviço e `REGISTRATION_ENABLED` (padrão fechado).
 - **Start command** customizado: `npx prisma migrate deploy && next start`.
-  A migração roda no comando de start (não em `deploy.preDeployCommand`)
-  porque, na Railway, o pre-deploy roda em uma instância efêmera sem o
-  volume persistente montado — rodar a migração ali não persiste no banco
-  real, causando `table does not exist` na primeira query em produção.
 - **Bucket** (Railway Object Storage, S3-compatible) para a foto de capa —
   `AWS_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
   `AWS_S3_BUCKET_NAME`, `AWS_DEFAULT_REGION`. As imagens são servidas pela
   própria aplicação em `/api/uploads/[...key]` (o bucket não precisa ser
   público).
+
+### Migração do SQLite para o PostgreSQL
+
+Até setembro de 2026 o banco era SQLite em um volume montado em `/data`
+(`DATABASE_URL=file:/data/prod.db`). A virada foi feita com
+`scripts/sqlite-para-postgres.mjs`, que copia os dados do arquivo antigo para
+o banco novo — só lê o SQLite, exige o destino vazio, roda em uma transação e
+confere as contagens no fim:
+
+```bash
+DATABASE_URL="postgresql://..." node scripts/sqlite-para-postgres.mjs prod.db
+```
+
+Como o Postgres do Railway só é alcançável de dentro da rede privada do
+projeto, o script rodou no próprio container (`railway ssh`) — é por isso que
+`better-sqlite3` segue entre as dependências de produção. O arquivo
+`/data/prod.db` continua no volume como plano de volta.

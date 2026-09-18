@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
+import { acceptInvite } from "@/lib/invites";
+import { allowSignup } from "@/lib/registration";
 import { registerSchema } from "@/lib/validations/auth";
 
 export async function POST(request: Request) {
@@ -15,7 +17,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, email, password } = parsed.data;
+  const { name, email, password, inviteToken } = parsed.data;
+
+  if (!(await allowSignup(inviteToken))) {
+    return NextResponse.json(
+      { error: "O cadastro está fechado. Peça um convite ao anfitrião responsável." },
+      { status: 403 },
+    );
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -32,5 +41,17 @@ export async function POST(request: Request) {
     select: { id: true, name: true, email: true },
   });
 
-  return NextResponse.json({ user }, { status: 201 });
+  // Com convite válido, a pessoa entra na conta de quem convidou; sem
+  // convite, ganha a própria conta.
+  const joined = inviteToken ? await acceptInvite(inviteToken, user.id) : null;
+  if (!joined?.ok) {
+    await prisma.account.create({
+      data: { name, members: { create: { userId: user.id, role: "OWNER" } } },
+    });
+  }
+
+  return NextResponse.json(
+    { user, account: joined?.ok ? { name: joined.accountName } : null },
+    { status: 201 },
+  );
 }

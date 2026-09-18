@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { parseJsonBody, requireOwnedProperty } from "@/lib/api";
+import { ownerOnly, parseJsonBody, requireOwnedProperty } from "@/lib/api";
 import { guideInclude, toGuideData } from "@/lib/guide/data";
 import { cleanupUnusedUploads } from "@/lib/guide/uploads";
 import { deletePropertyUploads, keyFromUploadUrl, propertyPrefix } from "@/lib/storage";
@@ -70,6 +70,9 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const { id } = await params;
   const owned = await requireOwnedProperty(id);
   if (owned.error) return owned.error;
+
+  const denied = ownerOnly(owned.account);
+  if (denied) return denied;
 
   await prisma.property.delete({ where: { id } });
   await deletePropertyUploads(id).catch(() => null);

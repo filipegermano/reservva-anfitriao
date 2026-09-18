@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireSessionAccount } from "@/lib/account";
 import { daysAgo, toDayKey } from "@/lib/calendar/month";
 import type { CalendarSource } from "@/lib/calendar/ical";
 import { CalendarView } from "@/components/calendar/calendar-view";
@@ -12,22 +12,21 @@ export const metadata: Metadata = { title: "Calendário · Reservva Anfitrião" 
 const HISTORY_DAYS = 180;
 
 export default async function CalendarPage() {
-  const session = await auth();
-  const userId = session!.user.id;
+  const { accountId } = await requireSessionAccount();
   const since = daysAgo(HISTORY_DAYS);
 
   const [feeds, events, properties] = await Promise.all([
     prisma.calendarFeed.findMany({
-      where: { userId },
+      where: { accountId },
       orderBy: { createdAt: "asc" },
       include: { _count: { select: { events: true } } },
     }),
     prisma.calendarEvent.findMany({
-      where: { feed: { userId }, endDate: { gte: since } },
+      where: { feed: { accountId }, endDate: { gte: since } },
       orderBy: { startDate: "asc" },
     }),
     prisma.property.findMany({
-      where: { userId },
+      where: { accountId },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),

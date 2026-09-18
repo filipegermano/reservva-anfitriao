@@ -10,6 +10,7 @@ import {
   Wifi,
 } from "lucide-react";
 
+import { isRegistrationEnabled } from "@/lib/registration";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { GuidePhoneMockup } from "@/components/marketing/guide-phone-mockup";
@@ -42,7 +43,6 @@ const products = [
     title: "Cartaz de boas-vindas",
     description:
       "Um cartaz pronto para imprimir e emoldurar, com QR code para o guia completo. Deixe na entrada ou na mesa da sala.",
-    href: "/registrar",
     cta: "Criar meu cartaz",
     tone: "primary" as const,
   },
@@ -51,7 +51,6 @@ const products = [
     title: "Guia digital do hóspede",
     description:
       "Uma página só sua, acessível por link ou QR code, sempre atualizada: wi-fi, check-in/out, regras e dicas da região.",
-    href: "/registrar",
     cta: "Criar meu guia",
     tone: "accent" as const,
   },
@@ -91,6 +90,9 @@ const benefits = [
 ];
 
 export default function LandingPage() {
+  // Com o cadastro fechado, as chamadas para ação levam ao login.
+  const signupOpen = isRegistrationEnabled();
+
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b">
@@ -102,9 +104,11 @@ export default function LandingPage() {
             <Button asChild variant="ghost">
               <Link href="/entrar">Entrar</Link>
             </Button>
-            <Button asChild>
-              <Link href="/registrar">Criar conta grátis</Link>
-            </Button>
+            {signupOpen && (
+              <Button asChild>
+                <Link href="/registrar">Criar conta grátis</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -127,15 +131,26 @@ export default function LandingPage() {
                 regras da casa e dicas da região — sem precisar saber nada de design.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
-                <Button asChild size="lg">
-                  <Link href="/registrar">
-                    Criar meu guia grátis
-                    <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link href="/entrar">Já tenho conta</Link>
-                </Button>
+                {signupOpen ? (
+                  <>
+                    <Button asChild size="lg">
+                      <Link href="/registrar">
+                        Criar meu guia grátis
+                        <ArrowRight className="size-4" />
+                      </Link>
+                    </Button>
+                    <Button asChild size="lg" variant="outline">
+                      <Link href="/entrar">Já tenho conta</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <Button asChild size="lg">
+                    <Link href="/entrar">
+                      Entrar na minha conta
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </Button>
+                )}
               </div>
               <p className="mt-6 text-xs text-muted-foreground">
                 Funciona com anúncios do Airbnb, Booking, VRBO e qualquer plataforma de temporada.
@@ -207,7 +222,7 @@ export default function LandingPage() {
                     <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
                   </div>
                   <Button asChild variant="outline" className="mt-auto w-fit">
-                    <Link href={product.href}>
+                    <Link href={signupOpen ? "/registrar" : "/entrar"}>
                       {product.cta}
                       <ArrowRight className="size-4" />
                     </Link>
@@ -250,8 +265,8 @@ export default function LandingPage() {
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
-              <Link href="/registrar">
-                Criar meu guia grátis
+              <Link href={signupOpen ? "/registrar" : "/entrar"}>
+                {signupOpen ? "Criar meu guia grátis" : "Entrar na minha conta"}
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -266,9 +281,11 @@ export default function LandingPage() {
             <Link href="/entrar" className="hover:text-foreground">
               Entrar
             </Link>
-            <Link href="/registrar" className="hover:text-foreground">
-              Criar conta
-            </Link>
+            {signupOpen && (
+              <Link href="/registrar" className="hover:text-foreground">
+                Criar conta
+              </Link>
+            )}
           </div>
         </div>
       </footer>

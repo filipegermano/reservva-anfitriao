@@ -7,26 +7,75 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
-  id           String         @id @default(cuid())
+  id           String          @id @default(cuid())
   name         String
-  email        String         @unique
+  email        String          @unique
   passwordHash String
-  properties   Property[]
-  calendars    CalendarFeed[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  memberships  AccountMember[]
+  invitesSent  AccountInvite[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+// Espaço de trabalho: guias, cartazes e calendários pertencem à conta, e
+// todos os membros dela têm acesso (ver src/lib/account.ts).
+model Account {
+  id         String          @id @default(cuid())
+  name       String
+  members    AccountMember[]
+  invites    AccountInvite[]
+  properties Property[]
+  calendars  CalendarFeed[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+enum AccountRole {
+  // OWNER convida e remove pessoas e exclui guias; MEMBER edita o resto.
+  OWNER
+  MEMBER
+}
+
+model AccountMember {
+  id        String      @id @default(cuid())
+  accountId String
+  account   Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      AccountRole @default(MEMBER)
+  createdAt DateTime    @default(now())
+
+  @@unique([accountId, userId])
+  @@index([userId])
+}
+
+// Convite de uso único, aberto por link. Guardamos só o hash do token: o
+// link completo aparece uma vez, na hora em que o dono o cria.
+model AccountInvite {
+  id          String    @id @default(cuid())
+  accountId   String
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  label       String?
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([accountId])
 }
 
 model Property {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name   String
-  slug   String @unique
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String  @unique
 
   // Informações básicas & boas-vindas
   propertyType     String?
@@ -115,8 +164,8 @@ model GuestFeedback {
 // são copiados para CalendarEvent a cada sincronização (ver src/lib/calendar).
 model CalendarFeed {
   id           String          @id @default(cuid())
-  userId       String
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    String
+  account      Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   propertyId   String?
   property     Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   name         String
@@ -130,7 +179,7 @@ model CalendarFeed {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  @@index([userId])
+  @@index([accountId])
 }
 
 model CalendarEvent {

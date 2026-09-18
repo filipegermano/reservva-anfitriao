@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { requireUserId } from "@/lib/calendar/api";
-import { getOwnedFeed, syncFeed } from "@/lib/calendar/sync";
+import { requireAccountId } from "@/lib/calendar/api";
+import { getAccountFeed, syncFeed } from "@/lib/calendar/sync";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(_request: Request, { params }: RouteParams) {
-  const { userId, error: authError } = await requireUserId();
+  const { accountId, error: authError } = await requireAccountId();
   if (authError) return authError;
 
   const { id } = await params;
-  const feed = await getOwnedFeed(id, userId);
+  const feed = await getAccountFeed(id, accountId);
   if (!feed) {
     return NextResponse.json({ error: "Calendário não encontrado" }, { status: 404 });
   }

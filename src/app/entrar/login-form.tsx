@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
-export function LoginForm() {
+export function LoginForm({ registrationEnabled }: { registrationEnabled: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,12 +81,14 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Ainda não tem conta?{" "}
-            <Link href="/registrar" className="font-medium text-foreground underline underline-offset-4">
-              Criar conta grátis
-            </Link>
-          </p>
+          {registrationEnabled && (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Ainda não tem conta?{" "}
+              <Link href="/registrar" className="font-medium text-foreground underline underline-offset-4">
+                Criar conta grátis
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

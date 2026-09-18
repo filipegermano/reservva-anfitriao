@@ -2,29 +2,29 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { parseJsonBody } from "@/lib/api";
-import { checkPropertyLink, requireUserId } from "@/lib/calendar/api";
+import { checkPropertyLink, requireAccountId } from "@/lib/calendar/api";
 import { defaultColorFor } from "@/lib/calendar/colors";
 import { detectSource } from "@/lib/calendar/ical";
 import { CalendarSyncError, fetchIcal } from "@/lib/calendar/sync";
 import { createCalendarSchema } from "@/lib/validations/calendar";
 
-const MAX_FEEDS_PER_USER = 50;
+const MAX_FEEDS_PER_ACCOUNT = 50;
 
 export async function POST(request: Request) {
-  const { userId, error: authError } = await requireUserId();
+  const { accountId, error: authError } = await requireAccountId();
   if (authError) return authError;
 
   const { data, error } = await parseJsonBody(request, createCalendarSchema);
   if (error) return error;
 
-  const linkError = await checkPropertyLink(data.propertyId, userId);
+  const linkError = await checkPropertyLink(data.propertyId, accountId);
   if (linkError) return linkError;
 
   const existing = await prisma.calendarFeed.findMany({
-    where: { userId },
+    where: { accountId },
     select: { url: true, color: true },
   });
-  if (existing.length >= MAX_FEEDS_PER_USER) {
+  if (existing.length >= MAX_FEEDS_PER_ACCOUNT) {
     return NextResponse.json({ error: "Limite de calendários atingido" }, { status: 400 });
   }
   if (existing.some((feed) => feed.url === data.url)) {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
   const feed = await prisma.calendarFeed.create({
     data: {
-      userId,
+      accountId,
       propertyId: data.propertyId,
       name: data.name,
       url: data.url,

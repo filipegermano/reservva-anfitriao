@@ -61,11 +61,11 @@ export async function syncFeed(feed: FeedToSync): Promise<{ ok: boolean; error?:
   }
 }
 
-/** Sincroniza os calendários do usuário (só os desatualizados, a menos que force). */
-export async function syncUserFeeds(userId: string, { force = false } = {}) {
+/** Sincroniza os calendários da conta (só os desatualizados, a menos que force). */
+export async function syncAccountFeeds(accountId: string, { force = false } = {}) {
   const feeds = await prisma.calendarFeed.findMany({
     where: {
-      userId,
+      accountId,
       ...(force
         ? {}
         : {
@@ -82,8 +82,8 @@ export async function syncUserFeeds(userId: string, { force = false } = {}) {
   return { synced: feeds.length, failed: results.filter((result) => !result.ok).length };
 }
 
-/** Busca um calendário garantindo que pertence ao usuário. */
-export async function getOwnedFeed(feedId: string, userId: string) {
+/** Busca um calendário garantindo que pertence à conta. */
+export async function getAccountFeed(feedId: string, accountId: string) {
   const feed = await prisma.calendarFeed.findUnique({ where: { id: feedId } });
-  return feed && feed.userId === userId ? feed : null;
+  return feed && feed.accountId === accountId ? feed : null;
 }

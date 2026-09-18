@@ -2,25 +2,25 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { parseJsonBody } from "@/lib/api";
-import { checkPropertyLink, requireUserId } from "@/lib/calendar/api";
-import { getOwnedFeed } from "@/lib/calendar/sync";
+import { checkPropertyLink, requireAccountId } from "@/lib/calendar/api";
+import { getAccountFeed } from "@/lib/calendar/sync";
 import { updateCalendarSchema } from "@/lib/validations/calendar";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteParams) {
-  const { userId, error: authError } = await requireUserId();
+  const { accountId, error: authError } = await requireAccountId();
   if (authError) return authError;
 
   const { id } = await params;
-  if (!(await getOwnedFeed(id, userId))) {
+  if (!(await getAccountFeed(id, accountId))) {
     return NextResponse.json({ error: "Calendário não encontrado" }, { status: 404 });
   }
 
   const { data, error } = await parseJsonBody(request, updateCalendarSchema);
   if (error) return error;
 
-  const linkError = await checkPropertyLink(data.propertyId, userId);
+  const linkError = await checkPropertyLink(data.propertyId, accountId);
   if (linkError) return linkError;
 
   await prisma.calendarFeed.update({ where: { id }, data });
@@ -28,11 +28,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
-  const { userId, error: authError } = await requireUserId();
+  const { accountId, error: authError } = await requireAccountId();
   if (authError) return authError;
 
   const { id } = await params;
-  if (!(await getOwnedFeed(id, userId))) {
+  if (!(await getAccountFeed(id, accountId))) {
     return NextResponse.json({ error: "Calendário não encontrado" }, { status: 404 });
   }
 

@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireSessionAccount } from "@/lib/account";
 import { isAiEnabled } from "@/lib/ai";
 import { configuredAppOrigin } from "@/lib/api";
 import { guideInclude, toGuideData } from "@/lib/guide/data";
@@ -22,7 +22,7 @@ async function publicOrigin(): Promise<string> {
 
 export default async function PropertyPage({ params }: PageProps) {
   const { id } = await params;
-  const session = await auth();
+  const account = await requireSessionAccount();
 
   const property = await prisma.property.findUnique({
     where: { id },
@@ -32,7 +32,7 @@ export default async function PropertyPage({ params }: PageProps) {
     },
   });
 
-  if (!property || property.userId !== session!.user.id) {
+  if (!property || property.accountId !== account.accountId) {
     notFound();
   }
 

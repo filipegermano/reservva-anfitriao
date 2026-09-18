@@ -8,5 +8,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
+    // Os testes de integração usam o banco de DATABASE_URL (.env).
+    setupFiles: ["dotenv/config"],
   },
 });

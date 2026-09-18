@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { CalendarDays, Eye, FileText, Globe, Home, MapPin, Plus, Star } from "lucide-react";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireSessionAccount } from "@/lib/account";
 import { imageSrc } from "@/lib/guide/contacts";
 import { getTheme } from "@/lib/guide/themes";
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const account = await requireSessionAccount();
 
   const [properties, ratings] = await Promise.all([
     prisma.property.findMany({
-      where: { userId: session!.user.id },
+      where: { accountId: account.accountId },
       orderBy: { updatedAt: "desc" },
       include: { _count: { select: { sections: true, feedbacks: true } } },
     }),
     prisma.guestFeedback.groupBy({
       by: ["propertyId"],
-      where: { property: { userId: session!.user.id } },
+      where: { property: { accountId: account.accountId } },
       _avg: { rating: true },
     }),
   ]);
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Olá, {session?.user?.name?.split(" ")[0] ?? "anfitrião"}!
+            Olá, {account.userName.split(" ")[0]}!
           </h1>
           <p className="text-muted-foreground">Gerencie os guias digitais e cartazes dos seus imóveis.</p>
         </div>
