@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+import { illustrationIds } from "@/components/guide/illustrations/ids";
 import {
   Accessibility,
   BedDouble,
@@ -24,7 +26,12 @@ import {
 const text = (max = 4000) => z.string().trim().max(max).catch("");
 const list = <T extends z.ZodType>(item: T, max = 100) => z.array(item).max(max).catch([]);
 
-const infoItemSchema = z.object({ title: text(120), text: text(2000) });
+/** `illustration`: id de um desenho pronto (ver components/guide/illustrations). */
+const infoItemSchema = z.object({
+  title: text(120),
+  text: text(2000),
+  illustration: z.enum(illustrationIds).nullish().catch(null).default(null),
+});
 
 /** Seções genéricas (Transporte, Segurança...) são uma lista de tópicos. */
 const infoListSchema = z.object({ intro: text(), items: list(infoItemSchema) });

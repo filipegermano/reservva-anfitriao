@@ -42,6 +42,19 @@ describe("parseSectionContent", () => {
     ]);
   });
 
+  it("aceita só ilustrações conhecidas nos tópicos", () => {
+    const items = [
+      { title: "Sofá-cama", text: "", illustration: "sofa_bed" },
+      { title: "Chuveiro", text: "", illustration: "inexistente" },
+      { title: "Fogão", text: "" },
+    ];
+    expect(
+      parseSectionContent("instructions", { intro: "", items }).items.map(
+        (item) => item.illustration,
+      ),
+    ).toEqual(["sofa_bed", null, null]);
+  });
+
   it("tem conteúdo padrão válido para todos os tipos", () => {
     for (const type of sectionTypes) {
       expect(() => sectionMeta[type].defaultContent()).not.toThrow();

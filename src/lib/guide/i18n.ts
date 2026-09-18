@@ -76,6 +76,11 @@ export type GuideStrings = {
   thanks: string;
   rateOn: (platform: string) => string;
   talkToUs: string;
+  illustrations: {
+    play: string;
+    pause: string;
+    sofaBed: { title: string; steps: [string, string, string, string] };
+  };
 };
 
 const pt: GuideStrings = {
@@ -183,6 +188,19 @@ const pt: GuideStrings = {
   thanks: "Obrigado!",
   rateOn: (platform) => `Avaliar no ${platform}`,
   talkToUs: "Fale com a gente",
+  illustrations: {
+    play: "Reproduzir animação",
+    pause: "Pausar animação",
+    sofaBed: {
+      title: "Como abrir o sofá-cama",
+      steps: [
+        "Tire as almofadas do encosto e deixe-as de lado.",
+        "Retire os assentos: eles não ficam na cama.",
+        "Puxe a base de ripas para fora, segurando pela frente.",
+        "Desdobre o colchão sobre a base até ele ficar plano.",
+      ],
+    },
+  },
 };
 
 const en: GuideStrings = {
@@ -290,6 +308,19 @@ const en: GuideStrings = {
   thanks: "Thank you!",
   rateOn: (platform) => `Review on ${platform}`,
   talkToUs: "Get in touch",
+  illustrations: {
+    play: "Play animation",
+    pause: "Pause animation",
+    sofaBed: {
+      title: "How to open the sofa bed",
+      steps: [
+        "Take the back cushions off and set them aside.",
+        "Remove the seat cushions: they don't stay on the bed.",
+        "Pull the slatted base out, holding it by the front.",
+        "Unfold the mattress over the base until it lies flat.",
+      ],
+    },
+  },
 };
 
 const es: GuideStrings = {
@@ -397,6 +428,19 @@ const es: GuideStrings = {
   thanks: "¡Gracias!",
   rateOn: (platform) => `Reseñar en ${platform}`,
   talkToUs: "Contáctanos",
+  illustrations: {
+    play: "Reproducir animación",
+    pause: "Pausar animación",
+    sofaBed: {
+      title: "Cómo abrir el sofá cama",
+      steps: [
+        "Quita los cojines del respaldo y déjalos a un lado.",
+        "Retira los asientos: no se quedan en la cama.",
+        "Tira de la base de listones hacia fuera, sujetándola por delante.",
+        "Despliega el colchón sobre la base hasta que quede plano.",
+      ],
+    },
+  },
 };
 
 export const guideStrings: Record<GuideLanguage, GuideStrings> = { pt, en, es };

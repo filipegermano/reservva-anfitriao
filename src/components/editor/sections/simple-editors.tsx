@@ -3,12 +3,20 @@
 import { Check, Plus } from "lucide-react";
 
 import type { SectionContent } from "@/lib/guide/sections";
+import { illustrationIds, illustrationLabels, type IllustrationId } from "@/components/guide/illustrations/ids";
 import { suggestedAmenities } from "@/lib/guide/sections";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AiButton,
   ListEditor,
@@ -223,6 +231,37 @@ export function CheckinEditor({ content, onChange }: EditorProps<"checkin">) {
   );
 }
 
+/**
+ * Anexa um desenho pronto ao tópico. O guia mostra a animação com os passos
+ * escritos embaixo, no idioma do hóspede.
+ */
+function IllustrationField({
+  value,
+  onChange,
+}: {
+  value: IllustrationId | null;
+  onChange: (value: IllustrationId | null) => void;
+}) {
+  return (
+    <Select
+      value={value ?? "none"}
+      onValueChange={(next) => onChange(next === "none" ? null : (next as IllustrationId))}
+    >
+      <SelectTrigger className="w-full" aria-label="Ilustração">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">Sem ilustração</SelectItem>
+        {illustrationIds.map((id) => (
+          <SelectItem key={id} value={id}>
+            {illustrationLabels[id]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function InfoListEditor({ content, onChange }: EditorProps<"infoList">) {
   return (
     <div className="space-y-4">
@@ -238,12 +277,16 @@ export function InfoListEditor({ content, onChange }: EditorProps<"infoList">) {
         max={100}
         addLabel="Adicionar tópico"
         emptyText="Adicione tópicos com título e explicação."
-        createItem={() => ({ title: "", text: "" })}
+        createItem={() => ({ title: "", text: "", illustration: null })}
         onChange={(items) => onChange({ ...content, items })}
         renderItem={(item, update) => (
           <>
             <Input value={item.title} maxLength={120} aria-label="Título" placeholder="Título" onChange={(event) => update({ ...item, title: event.target.value })} />
             <Textarea value={item.text} rows={2} maxLength={2000} aria-label="Texto" placeholder="Detalhes" onChange={(event) => update({ ...item, text: event.target.value })} />
+            <IllustrationField
+              value={item.illustration ?? null}
+              onChange={(illustration) => update({ ...item, illustration })}
+            />
           </>
         )}
       />

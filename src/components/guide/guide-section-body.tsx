@@ -24,6 +24,7 @@ import { mapsSearchUrl } from "@/lib/guide/data";
 import { contactHref, externalUrl, imageSrc, phoneUrl } from "@/lib/guide/contacts";
 import { recommendationsFor } from "@/lib/guide/presence";
 import { isInfoListType, type SectionContent } from "@/lib/guide/sections";
+import { GuideIllustration } from "@/components/guide/illustrations";
 import { recommendationCategoryIcons } from "@/lib/recommendation-categories";
 import { useGuideStrings } from "@/components/guide/guide-language";
 import {
@@ -624,6 +625,11 @@ function InfoListBody({ content }: { content: SectionContent<"transport"> }) {
           <GCard key={index}>
             {item.title && <GHeading className="text-base">{item.title}</GHeading>}
             {item.text && <GText className="mt-1 text-[var(--g-muted)]">{item.text}</GText>}
+            {item.illustration && (
+              <div className="mt-3">
+                <GuideIllustration id={item.illustration} />
+              </div>
+            )}
           </GCard>
         ))}
     </div>
