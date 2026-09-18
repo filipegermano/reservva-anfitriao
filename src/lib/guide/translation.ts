@@ -43,6 +43,7 @@ const translatablePaths: Record<SectionType, string[]> = {
   feedback: ["heading", "description", "incentiveMessage", "thanksMessage"],
   transport: ["intro", "items.*.title", "items.*.text"],
   instructions: ["intro", "items.*.title", "items.*.text"],
+  sofa_bed: ["intro", "items.*.title", "items.*.text"],
   safety: ["intro", "items.*.title", "items.*.text"],
   events: ["intro", "items.*.title", "items.*.text"],
   activities: ["intro", "items.*.title", "items.*.text"],

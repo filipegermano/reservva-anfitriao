@@ -13,8 +13,14 @@ export function recommendationsFor(
 /** Se a seção tem algo para mostrar ao hóspede. */
 export function sectionHasContent(section: GuideSectionData): boolean {
   if (isInfoListType(section.type)) {
-    const content = section.content as { intro: string; items: { title: string; text: string }[] };
-    return Boolean(content.intro) || content.items.some((item) => item.title || item.text);
+    const content = section.content as {
+      intro: string;
+      items: { title: string; text: string; illustration?: string | null }[];
+    };
+    return (
+      Boolean(content.intro) ||
+      content.items.some((item) => item.title || item.text || item.illustration)
+    );
   }
 
   switch (section.type) {

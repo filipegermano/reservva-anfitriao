@@ -59,7 +59,7 @@ describe("parseSectionContent", () => {
     for (const type of sectionTypes) {
       expect(() => sectionMeta[type].defaultContent()).not.toThrow();
     }
-    expect(sectionTypes).toHaveLength(18);
+    expect(sectionTypes).toHaveLength(19);
   });
 });
 
@@ -126,6 +126,10 @@ describe("presence", () => {
     expect(sectionHasContent(section("transport", { items: [{ title: "", text: "" }] }))).toBe(false);
     expect(sectionHasContent(section("transport", { intro: "Uber funciona bem" }))).toBe(true);
     expect(sectionHasContent(section("local_tips", {}))).toBe(true);
+    // Um tópico só com ilustração é conteúdo: a seção Sofá-cama nasce assim.
+    expect(
+      sectionHasContent(section("sofa_bed", { items: [{ illustration: "sofa_bed" }] })),
+    ).toBe(true);
   });
 
   it("busca sem acento e ignora URLs", () => {

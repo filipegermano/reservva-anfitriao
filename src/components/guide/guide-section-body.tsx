@@ -620,7 +620,7 @@ function InfoListBody({ content }: { content: SectionContent<"transport"> }) {
         </GCard>
       )}
       {content.items
-        .filter((item) => item.title || item.text)
+        .filter((item) => item.title || item.text || item.illustration)
         .map((item, index) => (
           <GCard key={index}>
             {item.title && <GHeading className="text-base">{item.title}</GHeading>}

@@ -17,6 +17,7 @@ import {
   ScrollText,
   ShieldCheck,
   Siren,
+  Sofa,
   Store,
   User,
   Utensils,
@@ -107,6 +108,7 @@ const sectionSchemas = {
   }),
   transport: infoListSchema,
   instructions: infoListSchema,
+  sofa_bed: infoListSchema,
   safety: infoListSchema,
   events: infoListSchema,
   activities: infoListSchema,
@@ -257,6 +259,15 @@ export const sectionMeta: Record<SectionType, SectionMeta> = {
     tone: 4,
     defaultContent: () => parseSectionContent("instructions", {}),
   },
+  sofa_bed: {
+    label: "Sofá-cama",
+    description: "Como abrir o sofá-cama, passo a passo",
+    icon: Sofa,
+    tone: 6,
+    // Já nasce com a ilustração: é o conteúdo inteiro da seção.
+    defaultContent: () =>
+      parseSectionContent("sofa_bed", { items: [{ illustration: "sofa_bed" }] }),
+  },
   safety: {
     label: "Segurança",
     description: "Dispositivos e orientações de segurança",
@@ -300,6 +311,7 @@ export const basicInfoIcon = Info;
 export const infoListSectionTypes = [
   "transport",
   "instructions",
+  "sofa_bed",
   "safety",
   "events",
   "activities",
