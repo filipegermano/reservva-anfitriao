@@ -34,6 +34,13 @@ export const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   "image/webp": "webp",
 };
 
+/** Vídeos curtos de demonstração (como abrir o sofá-cama, usar o chuveiro). */
+export const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+
+export const ALLOWED_VIDEO_TYPES: Record<string, string> = {
+  "video/mp4": "mp4",
+};
+
 const UPLOAD_PREFIX = "/api/uploads/";
 
 /** Sem bucket configurado, fotos importadas ficam apontando para a origem. */
@@ -60,8 +67,28 @@ export async function uploadPropertyImage(
   body: Buffer,
   contentType: string,
 ): Promise<string> {
-  const extension = ALLOWED_IMAGE_TYPES[contentType];
-  if (!extension) throw new Error("Formato de imagem não suportado");
+  return uploadPropertyFile(propertyId, kind, body, contentType, ALLOWED_IMAGE_TYPES);
+}
+
+/** Envia um vídeo para o bucket e retorna a URL servida pelo app. */
+export async function uploadPropertyVideo(
+  propertyId: string,
+  kind: string,
+  body: Buffer,
+  contentType: string,
+): Promise<string> {
+  return uploadPropertyFile(propertyId, kind, body, contentType, ALLOWED_VIDEO_TYPES);
+}
+
+async function uploadPropertyFile(
+  propertyId: string,
+  kind: string,
+  body: Buffer,
+  contentType: string,
+  allowed: Record<string, string>,
+): Promise<string> {
+  const extension = allowed[contentType];
+  if (!extension) throw new Error("Formato não suportado");
 
   const key = `${propertyPrefix(propertyId)}${kind}-${randomUUID()}.${extension}`;
   await s3.send(

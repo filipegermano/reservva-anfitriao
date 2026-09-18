@@ -15,11 +15,11 @@ export function sectionHasContent(section: GuideSectionData): boolean {
   if (isInfoListType(section.type)) {
     const content = section.content as {
       intro: string;
-      items: { title: string; text: string; illustration?: string | null }[];
+      items: { title: string; text: string; illustration?: string | null; video?: string }[];
     };
     return (
       Boolean(content.intro) ||
-      content.items.some((item) => item.title || item.text || item.illustration)
+      content.items.some((item) => item.title || item.text || item.illustration || item.video)
     );
   }
 

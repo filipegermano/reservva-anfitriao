@@ -32,6 +32,8 @@ const infoItemSchema = z.object({
   title: text(120),
   text: text(2000),
   illustration: z.enum(illustrationIds).nullish().catch(null).default(null),
+  /** Vídeo curto enviado pelo anfitrião (URL de /api/uploads). */
+  video: text(1000),
 });
 
 /** Seções genéricas (Transporte, Segurança...) são uma lista de tópicos. */

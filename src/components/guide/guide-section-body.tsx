@@ -620,7 +620,7 @@ function InfoListBody({ content }: { content: SectionContent<"transport"> }) {
         </GCard>
       )}
       {content.items
-        .filter((item) => item.title || item.text || item.illustration)
+        .filter((item) => item.title || item.text || item.illustration || item.video)
         .map((item, index) => (
           <GCard key={index}>
             {item.title && <GHeading className="text-base">{item.title}</GHeading>}
@@ -629,6 +629,15 @@ function InfoListBody({ content }: { content: SectionContent<"transport"> }) {
               <div className="mt-3">
                 <GuideIllustration id={item.illustration} />
               </div>
+            )}
+            {item.video && (
+              <video
+                src={item.video}
+                controls
+                playsInline
+                preload="metadata"
+                className="mt-3 w-full rounded-[calc(var(--g-radius)*0.75)] bg-black"
+              />
             )}
           </GCard>
         ))}

@@ -23,6 +23,7 @@ import {
   TagInput,
   TextAreaField,
   TextField,
+  VideoField,
 } from "@/components/editor/fields";
 
 type EditorProps<T extends keyof SectionMap> = {
@@ -277,7 +278,7 @@ export function InfoListEditor({ content, onChange }: EditorProps<"infoList">) {
         max={100}
         addLabel="Adicionar tópico"
         emptyText="Adicione tópicos com título e explicação."
-        createItem={() => ({ title: "", text: "", illustration: null })}
+        createItem={() => ({ title: "", text: "", illustration: null, video: "" })}
         onChange={(items) => onChange({ ...content, items })}
         renderItem={(item, update) => (
           <>
@@ -287,6 +288,7 @@ export function InfoListEditor({ content, onChange }: EditorProps<"infoList">) {
               value={item.illustration ?? null}
               onChange={(illustration) => update({ ...item, illustration })}
             />
+            <VideoField value={item.video} onChange={(video) => update({ ...item, video })} />
           </>
         )}
       />

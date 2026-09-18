@@ -9,6 +9,7 @@ import { parseSectionContent, sectionMeta, sectionTypes } from "@/lib/guide/sect
 import { emptyDraft } from "@/lib/import/listing-draft";
 import { posterContent, posterOptionsSchema, posterTemplates } from "@/lib/poster";
 import { defaultThemeId, getTheme, homeTileColors } from "@/lib/guide/themes";
+import { parseRange } from "@/lib/range";
 import { collectUploadUrls } from "@/lib/storage";
 
 function section<T extends GuideSectionData["type"]>(
@@ -261,5 +262,23 @@ describe("tema verde sálvia e cartaz A6", () => {
       size: "A6",
     });
     expect(posterOptionsSchema.parse({ size: "A7" }).size).toBe("A4");
+  });
+});
+
+describe("parseRange", () => {
+  it("lê os formatos que os players usam", () => {
+    expect(parseRange("bytes=0-1", 1000)).toEqual({ start: 0, end: 1 });
+    expect(parseRange("bytes=500-", 1000)).toEqual({ start: 500, end: 999 });
+    // Últimos bytes: onde o MP4 guarda o índice quando ele não está no começo.
+    expect(parseRange("bytes=-200", 1000)).toEqual({ start: 800, end: 999 });
+    expect(parseRange("bytes=0-9999", 1000)).toEqual({ start: 0, end: 999 });
+  });
+
+  it("recusa o que não dá para servir", () => {
+    expect(parseRange(null, 1000)).toBeNull();
+    expect(parseRange("bytes=1000-1200", 1000)).toBeNull();
+    expect(parseRange("bytes=800-500", 1000)).toBeNull();
+    expect(parseRange("bytes=-", 1000)).toBeNull();
+    expect(parseRange("segundos=0-1", 1000)).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ImagePlus, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Loader2, Plus, Sparkles, Trash2, Video, X } from "lucide-react";
 import { toast } from "sonner";
 
 import type { AiTask, AiTaskResult } from "@/lib/ai";
@@ -249,16 +249,56 @@ export function TagInput({
 }
 
 export function useImageUpload(endpoint?: string) {
+  return useFileUpload({
+    path: "images",
+    endpoint,
+    types: ["image/jpeg", "image/png", "image/webp"],
+    maxBytes: 5 * 1024 * 1024,
+    formatError: "Formato não suportado. Envie JPG, PNG ou WebP.",
+    sizeError: "Arquivo muito grande. Tamanho máximo: 5MB.",
+    failError: "Não foi possível enviar a imagem",
+  });
+}
+
+/** Vídeo curto de demonstração dentro de uma seção. */
+export function useVideoUpload() {
+  return useFileUpload({
+    path: "videos",
+    types: ["video/mp4"],
+    maxBytes: 25 * 1024 * 1024,
+    formatError: "Formato não suportado. Envie um vídeo MP4.",
+    sizeError: "Vídeo muito grande. Tamanho máximo: 25MB.",
+    failError: "Não foi possível enviar o vídeo",
+  });
+}
+
+function useFileUpload({
+  path,
+  endpoint,
+  types,
+  maxBytes,
+  formatError,
+  sizeError,
+  failError,
+}: {
+  path: string;
+  endpoint?: string;
+  types: string[];
+  maxBytes: number;
+  formatError: string;
+  sizeError: string;
+  failError: string;
+}) {
   const { propertyId } = useEditor();
   const [uploading, setUploading] = useState(false);
 
   async function upload(file: File): Promise<Record<string, unknown> | null> {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Formato não suportado. Envie JPG, PNG ou WebP.");
+    if (!types.includes(file.type)) {
+      toast.error(formatError);
       return null;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Tamanho máximo: 5MB.");
+    if (file.size > maxBytes) {
+      toast.error(sizeError);
       return null;
     }
 
@@ -266,18 +306,18 @@ export function useImageUpload(endpoint?: string) {
     formData.append("file", file);
     setUploading(true);
     try {
-      const response = await fetch(endpoint ?? `/api/properties/${propertyId}/images`, {
+      const response = await fetch(endpoint ?? `/api/properties/${propertyId}/${path}`, {
         method: "POST",
         body: formData,
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        toast.error(body?.error ?? "Não foi possível enviar a imagem");
+        toast.error(body?.error ?? failError);
         return null;
       }
       return body;
     } catch {
-      toast.error("Não foi possível enviar a imagem");
+      toast.error(failError);
       return null;
     } finally {
       setUploading(false);
@@ -293,24 +333,28 @@ export function UploadButton({
   label,
   multiple = false,
   variant = "outline",
+  accept = "image/jpeg,image/png,image/webp",
+  icon: Icon = ImagePlus,
 }: {
   onFile: (files: File[]) => void;
   uploading: boolean;
   label: string;
   multiple?: boolean;
   variant?: "outline" | "default" | "secondary";
+  accept?: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <>
       <Button type="button" variant={variant} size="sm" disabled={uploading} onClick={() => inputRef.current?.click()}>
-        {uploading ? <Loader2 className="animate-spin" /> : <ImagePlus />}
+        {uploading ? <Loader2 className="animate-spin" /> : <Icon />}
         {label}
       </Button>
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={accept}
         multiple={multiple}
         className="hidden"
         onChange={(event) => {
@@ -366,6 +410,35 @@ export function ImageField({
         </div>
       </div>
       <p className="text-xs text-muted-foreground">JPG, PNG ou WebP — até 5MB.</p>
+    </div>
+  );
+}
+
+/** Vídeo curto de um tópico, com envio e remoção. */
+export function VideoField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const { upload, uploading } = useVideoUpload();
+
+  return (
+    <div className="space-y-1.5">
+      {value && <video src={value} controls playsInline preload="metadata" className="w-full rounded-lg bg-black" />}
+      <div className="flex flex-wrap items-center gap-2">
+        <UploadButton
+          uploading={uploading}
+          accept="video/mp4"
+          icon={Video}
+          label={value ? "Trocar vídeo" : "Enviar vídeo"}
+          onFile={async ([file]) => {
+            const result = await upload(file);
+            if (typeof result?.url === "string") onChange(result.url);
+          }}
+        />
+        {value && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange("")}>
+            Remover vídeo
+          </Button>
+        )}
+        <span className="text-xs text-muted-foreground">MP4 — até 25MB.</span>
+      </div>
     </div>
   );
 }
